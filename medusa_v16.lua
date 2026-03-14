@@ -56,7 +56,7 @@ _G.MedusaConfig = {
 	ESP_Distance = true,
 	ESP_MaxDistance = 1500,
 	ESP_TeamCheck = true,
-	ESP_Color = Color3.fromRGB(130, 80, 255),
+	ESP_Color = Color3.fromRGB(0, 201, 107),
 	Speed_Enabled = false,
 	WalkSpeed = 16,
 	JumpPower = 50,
@@ -87,7 +87,7 @@ _G.MedusaConfig = {
 	PPBypass_Enabled = false,
 	CustomCrosshair_Enabled = false,
 	CrosshairSize = 12,
-	CrosshairColor = Color3.fromRGB(0, 255, 100),
+	CrosshairColor = Color3.fromRGB(0, 201, 107),
 	MetaBypass_Enabled = false,
 	AutoStomp_Enabled = false,
 	AutoStomp_Range = 15,
@@ -102,8 +102,8 @@ _G.MedusaConfig = {
 	OutdoorR = 127, OutdoorG = 127, OutdoorB = 127,
 	CC_Saturation = 0, CC_Brightness = 0,
 	ClockSpeed = 1,
-	AccentR = 130, AccentG = 80, AccentB = 255,
-	MenuTransparency = 20,
+	AccentR = 0, AccentG = 201, AccentB = 107,
+	MenuTransparency = 15,
 	HeadSize_Enabled = false, HeadSize = 1,
 	Breadcrumbs_Enabled = false,
 	UISounds_Enabled = true,
@@ -1747,17 +1747,17 @@ _G.MedusaFunctions = {
 local Fn = _G.MedusaFunctions
 
 local THEME = {
-	Background   = Color3.fromRGB(18, 18, 24),
-	Sidebar      = Color3.fromRGB(14, 14, 19),
-	Surface      = Color3.fromRGB(24, 24, 32),
-	SurfaceHover = Color3.fromRGB(32, 32, 44),
-	Accent       = Color3.fromRGB(130, 80, 255),
-	AccentDim    = Color3.fromRGB(60, 40, 100),
-	Text         = Color3.fromRGB(220, 220, 230),
-	TextDim      = Color3.fromRGB(120, 120, 140),
-	Positive     = Color3.fromRGB(80, 220, 120),
+	Background   = Color3.fromRGB(12, 12, 16),
+	Sidebar      = Color3.fromRGB(10, 10, 14),
+	Surface      = Color3.fromRGB(20, 22, 24),
+	SurfaceHover = Color3.fromRGB(28, 32, 30),
+	Accent       = Color3.fromRGB(0, 201, 107),
+	AccentDim    = Color3.fromRGB(0, 80, 45),
+	Text         = Color3.fromRGB(220, 230, 225),
+	TextDim      = Color3.fromRGB(110, 130, 120),
+	Positive     = Color3.fromRGB(0, 220, 110),
 	Negative     = Color3.fromRGB(220, 60, 80),
-	Border       = Color3.fromRGB(40, 40, 55),
+	Border       = Color3.fromRGB(30, 45, 35),
 }
 
 local FONT_BODY = Enum.Font.Gotham
@@ -1797,7 +1797,7 @@ local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
 mainFrame.Size = UDim2.new(0, 560, 0, 400)
 mainFrame.Position = UDim2.new(0.5, -280, 0.5, -200)
-mainFrame.BackgroundColor3 = Color3.fromRGB(12, 10, 22)
+mainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 16)
 mainFrame.BackgroundTransparency = Config.MenuTransparency / 100
 mainFrame.BorderSizePixel = 0
 mainFrame.ClipsDescendants = true
@@ -1808,25 +1808,25 @@ mc.CornerRadius = UDim.new(0, 12)
 mc.Parent = mainFrame
 
 local ms = Instance.new("UIStroke")
-ms.Color = Color3.fromRGB(130, 80, 255)
+ms.Color = Color3.fromRGB(0, 201, 107)
 ms.Thickness = 1.5
-ms.Transparency = 0.3
+ms.Transparency = 0.2
 ms.Parent = mainFrame
 
 local glassOverlay = Instance.new("Frame")
 glassOverlay.Name = "GlassOverlay"
 glassOverlay.Size = UDim2.new(1, 0, 1, 0)
-glassOverlay.BackgroundColor3 = Color3.fromRGB(20, 16, 40)
-glassOverlay.BackgroundTransparency = 0.92
+glassOverlay.BackgroundColor3 = Color3.fromRGB(10, 20, 14)
+glassOverlay.BackgroundTransparency = 0.93
 glassOverlay.BorderSizePixel = 0
 glassOverlay.ZIndex = 0
 glassOverlay.Parent = mainFrame
 Instance.new("UICorner", glassOverlay).CornerRadius = UDim.new(0, 12)
 local glassGrad = Instance.new("UIGradient")
 glassGrad.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(60, 40, 120)),
-	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(20, 16, 40)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 25, 80)),
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 50, 30)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(8, 12, 10)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 40, 25)),
 })
 glassGrad.Transparency = NumberSequence.new({
 	NumberSequenceKeypoint.new(0, 0.95),
@@ -1842,7 +1842,7 @@ shadow.Size = UDim2.new(1, 40, 1, 40)
 shadow.Position = UDim2.new(0, -20, 0, -20)
 shadow.BackgroundTransparency = 1
 shadow.Image = "rbxassetid://6015897843"
-shadow.ImageColor3 = Color3.fromRGB(10, 5, 25)
+shadow.ImageColor3 = Color3.fromRGB(0, 10, 5)
 shadow.ImageTransparency = 0.3
 shadow.ScaleType = Enum.ScaleType.Slice
 shadow.SliceCenter = Rect.new(49, 49, 450, 450)
@@ -1852,8 +1852,8 @@ shadow.Parent = mainFrame
 local titleBar = Instance.new("Frame")
 titleBar.Name = "TitleBar"
 titleBar.Size = UDim2.new(1, 0, 0, 38)
-titleBar.BackgroundColor3 = Color3.fromRGB(8, 6, 16)
-titleBar.BackgroundTransparency = 0.1
+titleBar.BackgroundColor3 = Color3.fromRGB(8, 10, 9)
+titleBar.BackgroundTransparency = 0.05
 titleBar.BorderSizePixel = 0
 titleBar.ZIndex = 5
 titleBar.Parent = mainFrame
