@@ -116,7 +116,7 @@ _G.MedusaConfig = {
 	OffscreenArrows_Enabled = false,
 	NameSpoof_Enabled = false,
 	Intro_Enabled = true,
-	RGBGlow_Enabled = true,
+	RGBGlow_Enabled = false,
 }
 local Config = _G.MedusaConfig
 
@@ -1611,6 +1611,22 @@ end
 
 local function FullEject()
 	_G.MedusaLoaded = false
+	pcall(function()
+		local hum = GetHumanoid()
+		if hum then
+			hum.WalkSpeed = OriginalWalkSpeed or 16
+			hum.JumpPower = OriginalJumpPower or 50
+			hum.PlatformStand = false
+		end
+	end)
+	pcall(function()
+		local char = GetCharacter()
+		if char then
+			for _, part in ipairs(char:GetDescendants()) do
+				if part:IsA("BasePart") then part.CanCollide = (part.Name ~= "Head") end
+			end
+		end
+	end)
 	pcall(StopAimbot)
 	pcall(StopSilentAim)
 	pcall(StopESP)
@@ -1649,6 +1665,33 @@ local function FullEject()
 	pcall(StopNameSpoof)
 	DisconnectAllSignals()
 	CleanupAllDrawings()
+	pcall(function()
+		if _G.MedusaOriginalNamecall then
+			local mt = getrawmetatable(game)
+			setreadonly(mt, false)
+			mt.__namecall = _G.MedusaOriginalNamecall
+			setreadonly(mt, true)
+			_G.MedusaOriginalNamecall = nil
+		end
+	end)
+	pcall(function()
+		if _G.MedusaOriginalIndex then
+			local mt = getrawmetatable(game)
+			setreadonly(mt, false)
+			mt.__index = _G.MedusaOriginalIndex
+			setreadonly(mt, true)
+			_G.MedusaOriginalIndex = nil
+		end
+	end)
+	pcall(function()
+		if _G.MedusaOriginalNewindex then
+			local mt = getrawmetatable(game)
+			setreadonly(mt, false)
+			mt.__newindex = _G.MedusaOriginalNewindex
+			setreadonly(mt, true)
+			_G.MedusaOriginalNewindex = nil
+		end
+	end)
 	task.wait(0.2)
 	_G.MedusaConfig = nil
 	_G.MedusaSignals = nil
@@ -2823,133 +2866,114 @@ local function PlayCinematicIntro()
 	mainFrame.Visible = false
 	local introScreen = Instance.new("Frame")
 	introScreen.Size = UDim2.new(1, 0, 1, 0)
-	introScreen.BackgroundColor3 = Color3.fromRGB(4, 4, 8)
+	introScreen.BackgroundColor3 = Color3.fromRGB(2, 2, 4)
 	introScreen.BackgroundTransparency = 0
 	introScreen.BorderSizePixel = 0
 	introScreen.ZIndex = 9999
 	introScreen.Parent = screenGui
-	local vignette = Instance.new("ImageLabel")
-	vignette.Size = UDim2.new(1, 0, 1, 0)
-	vignette.BackgroundTransparency = 1
-	vignette.Image = "rbxassetid://1049674457"
-	vignette.ImageColor3 = Color3.fromRGB(130, 80, 255)
-	vignette.ImageTransparency = 0.85
-	vignette.ScaleType = Enum.ScaleType.Stretch
-	vignette.ZIndex = 10000
-	vignette.Parent = introScreen
 	local introLogo = Instance.new("TextLabel")
-	introLogo.Size = UDim2.new(1, 0, 0, 70)
-	introLogo.Position = UDim2.new(0, 0, 0.5, -50)
+	introLogo.Size = UDim2.new(1, 0, 0, 60)
+	introLogo.Position = UDim2.new(0, 0, 0.5, -55)
 	introLogo.BackgroundTransparency = 1
 	introLogo.Text = "M E D U S A"
-	introLogo.TextColor3 = Color3.fromRGB(130, 80, 255)
-	introLogo.TextSize = 48
+	introLogo.TextColor3 = Color3.fromRGB(0, 201, 107)
+	introLogo.TextSize = 46
 	introLogo.Font = Enum.Font.GothamBold
 	introLogo.TextTransparency = 1
-	introLogo.TextXAlignment = Enum.TextXAlignment.Center
 	introLogo.ZIndex = 10001
 	introLogo.Parent = introScreen
-	local introVersion = Instance.new("TextLabel")
-	introVersion.Size = UDim2.new(1, 0, 0, 24)
-	introVersion.Position = UDim2.new(0, 0, 0.5, 20)
-	introVersion.BackgroundTransparency = 1
-	introVersion.Text = ""
-	introVersion.TextColor3 = Color3.fromRGB(200, 180, 240)
-	introVersion.TextSize = 15
-	introVersion.Font = Enum.Font.GothamMedium
-	introVersion.TextTransparency = 0
-	introVersion.ZIndex = 10001
-	introVersion.Parent = introScreen
-	local introLine = Instance.new("Frame")
-	introLine.Size = UDim2.new(0, 0, 0, 2)
-	introLine.Position = UDim2.new(0.5, 0, 0.5, 50)
-	introLine.AnchorPoint = Vector2.new(0.5, 0)
-	introLine.BackgroundColor3 = Color3.fromRGB(130, 80, 255)
-	introLine.BorderSizePixel = 0
-	introLine.ZIndex = 10001
-	introLine.Parent = introScreen
-	local lineGradient = Instance.new("UIGradient")
-	lineGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(60, 20, 120)),
-		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(180, 120, 255)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 20, 120)),
+	local introSlogan = Instance.new("TextLabel")
+	introSlogan.Size = UDim2.new(1, 0, 0, 20)
+	introSlogan.Position = UDim2.new(0, 0, 0.5, 8)
+	introSlogan.BackgroundTransparency = 1
+	introSlogan.Text = "Cinematic Edition  —  Perfection in Every Pixel"
+	introSlogan.TextColor3 = Color3.fromRGB(0, 140, 75)
+	introSlogan.TextSize = 13
+	introSlogan.Font = Enum.Font.GothamMedium
+	introSlogan.TextTransparency = 1
+	introSlogan.ZIndex = 10001
+	introSlogan.Parent = introScreen
+	local barBg = Instance.new("Frame")
+	barBg.Size = UDim2.new(0, 260, 0, 3)
+	barBg.Position = UDim2.new(0.5, -130, 0.5, 42)
+	barBg.BackgroundColor3 = Color3.fromRGB(20, 30, 22)
+	barBg.BorderSizePixel = 0
+	barBg.ZIndex = 10001
+	barBg.Parent = introScreen
+	Instance.new("UICorner", barBg).CornerRadius = UDim.new(0, 2)
+	local barFill = Instance.new("Frame")
+	barFill.Size = UDim2.new(0, 0, 1, 0)
+	barFill.BackgroundColor3 = Color3.fromRGB(0, 201, 107)
+	barFill.BorderSizePixel = 0
+	barFill.ZIndex = 10002
+	barFill.Parent = barBg
+	Instance.new("UICorner", barFill).CornerRadius = UDim.new(0, 2)
+	local barGlow = Instance.new("UIGradient")
+	barGlow.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 120, 60)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 140)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 120, 60)),
 	})
-	lineGradient.Parent = introLine
+	barGlow.Parent = barFill
 	local introStatus = Instance.new("TextLabel")
-	introStatus.Size = UDim2.new(1, 0, 0, 18)
-	introStatus.Position = UDim2.new(0, 0, 0.5, 62)
+	introStatus.Size = UDim2.new(1, 0, 0, 16)
+	introStatus.Position = UDim2.new(0, 0, 0.5, 54)
 	introStatus.BackgroundTransparency = 1
 	introStatus.Text = ""
-	introStatus.TextColor3 = Color3.fromRGB(100, 90, 130)
-	introStatus.TextSize = 11
+	introStatus.TextColor3 = Color3.fromRGB(0, 110, 60)
+	introStatus.TextSize = 10
 	introStatus.Font = Enum.Font.Gotham
-	introStatus.TextTransparency = 0
 	introStatus.ZIndex = 10001
 	introStatus.Parent = introScreen
 	local bootSound = nil
 	pcall(function()
 		bootSound = Instance.new("Sound")
 		bootSound.SoundId = "rbxassetid://5502095102"
-		bootSound.Volume = 0
+		bootSound.Volume = 0.6
 		bootSound.Parent = game:GetService("SoundService")
 		bootSound:Play()
-		TweenService:Create(bootSound, TweenInfo.new(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			Volume = 0.8,
-		}):Play()
 	end)
-	TweenService:Create(introLogo, TweenInfo.new(1.2, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+	TweenService:Create(introLogo, TweenInfo.new(0.8, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+		TextTransparency = 0,
+	}):Play()
+	task.wait(0.5)
+	TweenService:Create(introSlogan, TweenInfo.new(0.6, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
 		TextTransparency = 0,
 	}):Play()
 	task.spawn(function()
-		local spacing = {"M  E  D  U  S  A", "M   E   D   U   S   A", "M    E    D    U    S    A"}
-		for i, txt in ipairs(spacing) do
-			task.wait(0.35)
-			introLogo.Text = txt
-		end
-	end)
-	task.wait(0.6)
-	local typeText = "v16.0  Cinematic Edition  ~  Perfection in Every Pixel"
-	task.spawn(function()
-		for i = 1, #typeText do
-			introVersion.Text = string.sub(typeText, 1, i)
-			task.wait(0.025)
-		end
-	end)
-	TweenService:Create(introLine, TweenInfo.new(1.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-		Size = UDim2.new(0, 320, 0, 2),
-	}):Play()
-	task.spawn(function()
 		local gradOffset = 0
-		while introLine and introLine.Parent do
-			gradOffset = (gradOffset + 0.02) % 1
-			pcall(function() lineGradient.Offset = Vector2.new(gradOffset, 0) end)
+		while barFill and barFill.Parent do
+			gradOffset = (gradOffset + 0.03) % 1
+			pcall(function() barGlow.Offset = Vector2.new(gradOffset, 0) end)
 			task.wait(0.03)
 		end
 	end)
-	local statusMsgs = {"Injecting modules...", "Loading combat engine...", "Rendering ESP pipeline...", "Calibrating silent aim...", "Establishing connections...", "Ready."}
-	task.spawn(function()
-		for _, msg in ipairs(statusMsgs) do
-			introStatus.Text = msg
-			TweenService:Create(introStatus, TweenInfo.new(0.2), {TextTransparency = 0}):Play()
-			task.wait(0.4)
-			TweenService:Create(introStatus, TweenInfo.new(0.15), {TextTransparency = 0.5}):Play()
-			task.wait(0.1)
-		end
-	end)
-	task.wait(2.5)
-	pcall(function()
-		TweenService:Create(bootSound, TweenInfo.new(0.5), {Volume = 1}):Play()
-	end)
-	TweenService:Create(introLogo, TweenInfo.new(0.6, Enum.EasingStyle.Quint), {TextTransparency = 1, TextSize = 60}):Play()
-	TweenService:Create(introVersion, TweenInfo.new(0.4), {TextTransparency = 1}):Play()
-	TweenService:Create(introLine, TweenInfo.new(0.5), {BackgroundTransparency = 1, Size = UDim2.new(0, 500, 0, 2)}):Play()
+	local stages = {
+		{pct = 0.20, msg = "Initializing Medusa Protocol..."},
+		{pct = 0.45, msg = "Injecting Combat Engine..."},
+		{pct = 0.65, msg = "Rendering ESP Pipeline..."},
+		{pct = 0.80, msg = "Calibrating Silent Aim..."},
+		{pct = 0.95, msg = "Synchronizing Interface..."},
+		{pct = 1.00, msg = "Ready."},
+	}
+	for _, stage in ipairs(stages) do
+		introStatus.Text = stage.msg
+		TweenService:Create(barFill, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+			Size = UDim2.new(stage.pct, 0, 1, 0),
+		}):Play()
+		task.wait(0.6)
+	end
+	task.wait(0.3)
+	TweenService:Create(introLogo, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {TextTransparency = 1}):Play()
+	TweenService:Create(introSlogan, TweenInfo.new(0.4), {TextTransparency = 1}):Play()
+	TweenService:Create(barBg, TweenInfo.new(0.4), {BackgroundTransparency = 1}):Play()
+	TweenService:Create(barFill, TweenInfo.new(0.4), {BackgroundTransparency = 1}):Play()
 	TweenService:Create(introStatus, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
 	task.wait(0.3)
-	TweenService:Create(introScreen, TweenInfo.new(0.7, Enum.EasingStyle.Quint), {BackgroundTransparency = 1}):Play()
-	TweenService:Create(vignette, TweenInfo.new(0.5), {ImageTransparency = 1}):Play()
-	task.wait(0.8)
+	TweenService:Create(introScreen, TweenInfo.new(0.6, Enum.EasingStyle.Quint), {BackgroundTransparency = 1}):Play()
+	task.wait(0.7)
 	introScreen:Destroy()
-	task.delay(4, function() pcall(function() bootSound:Destroy() end) end)
+	task.delay(5, function() pcall(function() if bootSound then bootSound:Destroy() end end) end)
 	mainFrame.Visible = true
 	mainFrame.Size = UDim2.new(0, 560 * 0.6, 0, 400 * 0.6)
 	mainFrame.Position = UDim2.new(0.5, -168, 0.5, -120)
@@ -2959,22 +2983,33 @@ local function PlayCinematicIntro()
 		Position = UDim2.new(0.5, -280, 0.5, -200),
 		BackgroundTransparency = Config.MenuTransparency / 100,
 	}):Play()
+	pcall(function()
+		local readySound = Instance.new("Sound")
+		readySound.SoundId = "rbxassetid://6333186162"
+		readySound.Volume = 0.5
+		readySound.Parent = game:GetService("SoundService")
+		readySound:Play()
+		task.delay(2, function() pcall(function() readySound:Destroy() end) end)
+	end)
 	task.wait(0.8)
 	local notifFrame = Instance.new("Frame")
-	notifFrame.Size = UDim2.new(0, 340, 0, 44)
-	notifFrame.Position = UDim2.new(0.5, -170, 0, -50)
-	notifFrame.AnchorPoint = Vector2.new(0, 0)
-	notifFrame.BackgroundColor3 = Color3.fromRGB(20, 15, 30)
-	notifFrame.BackgroundTransparency = 0.1
+	notifFrame.Size = UDim2.new(0, 360, 0, 42)
+	notifFrame.Position = UDim2.new(0.5, -180, 0, -50)
+	notifFrame.BackgroundColor3 = Color3.fromRGB(8, 18, 12)
+	notifFrame.BackgroundTransparency = 0.05
 	notifFrame.BorderSizePixel = 0
 	notifFrame.ZIndex = 10000
 	notifFrame.Parent = screenGui
-	local nCorner = Instance.new("UICorner") nCorner.CornerRadius = UDim.new(0, 8) nCorner.Parent = notifFrame
-	local nStroke = Instance.new("UIStroke") nStroke.Color = Color3.fromRGB(130, 80, 255) nStroke.Thickness = 1 nStroke.Transparency = 0.4 nStroke.Parent = notifFrame
+	Instance.new("UICorner", notifFrame).CornerRadius = UDim.new(0, 8)
+	local nStroke = Instance.new("UIStroke")
+	nStroke.Color = Color3.fromRGB(0, 201, 107)
+	nStroke.Thickness = 1
+	nStroke.Transparency = 0.3
+	nStroke.Parent = notifFrame
 	local nAccent = Instance.new("Frame")
 	nAccent.Size = UDim2.new(0, 3, 1, -8)
 	nAccent.Position = UDim2.new(0, 6, 0, 4)
-	nAccent.BackgroundColor3 = Color3.fromRGB(130, 80, 255)
+	nAccent.BackgroundColor3 = Color3.fromRGB(0, 201, 107)
 	nAccent.BorderSizePixel = 0
 	nAccent.ZIndex = 10001
 	nAccent.Parent = notifFrame
@@ -2983,27 +3018,19 @@ local function PlayCinematicIntro()
 	nText.Size = UDim2.new(1, -22, 1, 0)
 	nText.Position = UDim2.new(0, 18, 0, 0)
 	nText.BackgroundTransparency = 1
-	nText.Text = "MEDUSA v16.0  ~  A Lenda Voltou."
-	nText.TextColor3 = Color3.fromRGB(220, 200, 255)
-	nText.TextSize = 13
+	nText.Text = "MEDUSA v16.0 CINEMATIC  ~  A Lenda Verde Voltou."
+	nText.TextColor3 = Color3.fromRGB(180, 240, 210)
+	nText.TextSize = 12
 	nText.Font = Enum.Font.GothamMedium
 	nText.TextXAlignment = Enum.TextXAlignment.Left
 	nText.ZIndex = 10001
 	nText.Parent = notifFrame
-	pcall(function()
-		local nSound = Instance.new("Sound")
-		nSound.SoundId = "rbxassetid://6026984224"
-		nSound.Volume = 0.4
-		nSound.Parent = game:GetService("SoundService")
-		nSound:Play()
-		task.delay(2, function() pcall(function() nSound:Destroy() end) end)
-	end)
 	TweenService:Create(notifFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Position = UDim2.new(0.5, -170, 0, 16),
+		Position = UDim2.new(0.5, -180, 0, 16),
 	}):Play()
-	task.delay(3.5, function()
+	task.delay(4, function()
 		TweenService:Create(notifFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quint), {
-			Position = UDim2.new(0.5, -170, 0, -60),
+			Position = UDim2.new(0.5, -180, 0, -60),
 			BackgroundTransparency = 1,
 		}):Play()
 		TweenService:Create(nStroke, TweenInfo.new(0.3), {Transparency = 1}):Play()
@@ -3032,7 +3059,7 @@ end
 
 Fn.StartExposureContrast()
 
-local rgbHue = 0
+local rgbHue = 0.38
 local mainStroke = nil
 pcall(function()
 	for _, child in pairs(mainFrame:GetChildren()) do
@@ -3055,15 +3082,15 @@ RegisterUISignal("Theme_HB", RunService.Heartbeat:Connect(function()
 		mainFrame.BackgroundTransparency = t
 	end
 	if Config.RGBGlow_Enabled and mainStroke then
-		rgbHue = (rgbHue + 0.003) % 1
-		local rgbColor = Color3.fromHSV(rgbHue, 0.8, 1)
+		rgbHue = (rgbHue + 0.002) % 1
+		local rgbColor = Color3.fromHSV(rgbHue, 0.7, 1)
 		mainStroke.Color = rgbColor
-		mainStroke.Transparency = 0.1
+		mainStroke.Transparency = 0.15
 		pcall(function() accentLine.BackgroundColor3 = rgbColor end)
-		mainFrame.BackgroundTransparency = 0.15
+		mainFrame.BackgroundTransparency = 0.12
 	elseif mainStroke and not Config.RGBGlow_Enabled then
 		mainStroke.Color = THEME.Accent
-		mainStroke.Transparency = 0.5
+		mainStroke.Transparency = 0.2
 	end
 end))
-print("[MEDUSA] v16.0 Cinematic Edition ~ Ultra Engine Loaded")
+print("[MEDUSA] v16.0 Cinematic Edition ~ Loaded Successfully")
