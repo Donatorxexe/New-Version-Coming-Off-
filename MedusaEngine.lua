@@ -85,8 +85,9 @@ local Camera = Workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
 local Config = {
-    Version = "1.0.3",
+    Version = "1.0.4",
     Name = "MEDUSA",
+    ClickSound = "rbxassetid://6895079853",
     Theme = {
         Primary = Color3.fromRGB(0, 201, 107),
         PrimaryDark = Color3.fromRGB(0, 140, 75),
@@ -173,6 +174,7 @@ local Values = {
     DashPower = 100,
     HighJumpPower = 150,
     GlideSpeed = 50,
+    SoundVolume = 0.5,
 }
 
 -- ╔════════════════════════════════════════╗
@@ -304,6 +306,19 @@ local function ConsoleLog(msg, msgType)
     if #_G.Medusa.ConsoleLog > 200 then
         table.remove(_G.Medusa.ConsoleLog, 1)
     end
+end
+
+-- ══════ CLICK SOUND SYSTEM ══════
+local function PlayClickSound()
+    pcall(function()
+        local sound = Instance.new("Sound")
+        sound.SoundId = Config.ClickSound
+        sound.Volume = Values.SoundVolume
+        sound.PlayOnRemove = false
+        sound.Parent = game:GetService("SoundService")
+        sound:Play()
+        game:GetService("Debris"):AddItem(sound, 1)
+    end)
 end
 
 local function GetClosestPlayer(maxDist, fovCheck)
@@ -1964,17 +1979,49 @@ local function BuildMainUI()
 
     local function ShowToast(msg)
         if not State.Notifications then return end
-        local toast = Instance.new("Frame"); toast.Size = UDim2.new(1, 0, 0, 36)
-        toast.BackgroundColor3 = Config.Theme.Card; toast.BorderSizePixel = 0
-        toast.BackgroundTransparency = 1; toast.ZIndex = 101; toast.Parent = toastContainer
-        Instance.new("UICorner", toast).CornerRadius = UDim.new(0, 6)
-        local ts = Instance.new("UIStroke"); ts.Color = Config.Theme.PrimaryDark; ts.Thickness = 1; ts.Transparency = 0.5; ts.Parent = toast
-        local tL = Instance.new("TextLabel"); tL.Size = UDim2.new(1, -16, 1, 0); tL.Position = UDim2.new(0, 8, 0, 0)
-        tL.BackgroundTransparency = 1; tL.Text = "🐍 " .. msg; tL.TextColor3 = Config.Theme.Text
+        PlayClickSound()
+        local toast = Instance.new("Frame"); toast.Size = UDim2.new(1, 0, 0, 42)
+        toast.BackgroundColor3 = Color3.fromRGB(10, 10, 10); toast.BorderSizePixel = 0
+        toast.BackgroundTransparency = 1; toast.ZIndex = 101; toast.ClipsDescendants = true; toast.Parent = toastContainer
+        Instance.new("UICorner", toast).CornerRadius = UDim.new(0, 8)
+        local ts = Instance.new("UIStroke"); ts.Color = Config.Theme.PrimaryDark; ts.Thickness = 1; ts.Transparency = 0.3; ts.Parent = toast
+        -- Glassmorphism inner glow top line
+        local tGlow = Instance.new("Frame"); tGlow.Size = UDim2.new(1, 0, 0, 1); tGlow.Position = UDim2.new(0, 0, 0, 0)
+        tGlow.BackgroundColor3 = Config.Theme.Primary; tGlow.BackgroundTransparency = 0.5; tGlow.BorderSizePixel = 0; tGlow.ZIndex = 103; tGlow.Parent = toast
+        local tGlowG = Instance.new("UIGradient"); tGlowG.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(0,0,0)), ColorSequenceKeypoint.new(0.3, Config.Theme.Primary),
+            ColorSequenceKeypoint.new(0.7, Config.Theme.Primary), ColorSequenceKeypoint.new(1, Color3.fromRGB(0,0,0)),
+        }); tGlowG.Parent = tGlow
+        -- Icon
+        local tIcon = Instance.new("TextLabel"); tIcon.Size = UDim2.new(0, 22, 0, 22); tIcon.Position = UDim2.new(0, 8, 0, 6)
+        tIcon.BackgroundTransparency = 1; tIcon.Text = "🐍"; tIcon.TextScaled = true; tIcon.ZIndex = 103; tIcon.Parent = toast
+        -- Text
+        local tL = Instance.new("TextLabel"); tL.Size = UDim2.new(1, -40, 0, 28); tL.Position = UDim2.new(0, 34, 0, 3)
+        tL.BackgroundTransparency = 1; tL.Text = msg; tL.TextColor3 = Config.Theme.Text
         tL.Font = Enum.Font.Gotham; tL.TextSize = 12; tL.TextXAlignment = Enum.TextXAlignment.Left
-        tL.TextTruncate = Enum.TextTruncate.AtEnd; tL.ZIndex = 102; tL.Parent = toast
-        SafeTween(toast, TweenInfo.new(0.3), {BackgroundTransparency = 0})
-        task.delay(3, function() SafeTween(toast, TweenInfo.new(0.5), {BackgroundTransparency = 1}); task.wait(0.6); if toast.Parent then toast:Destroy() end end)
+        tL.TextTruncate = Enum.TextTruncate.AtEnd; tL.ZIndex = 103; tL.Parent = toast
+        -- Progress bar (shrinks over time)
+        local tBar = Instance.new("Frame"); tBar.Size = UDim2.new(1, -16, 0, 2); tBar.Position = UDim2.new(0, 8, 1, -6)
+        tBar.BackgroundColor3 = Config.Theme.Primary; tBar.BorderSizePixel = 0; tBar.ZIndex = 103; tBar.Parent = toast
+        Instance.new("UICorner", tBar).CornerRadius = UDim.new(0, 1)
+        local tBarG = Instance.new("UIGradient"); tBarG.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Config.Theme.PrimaryDark), ColorSequenceKeypoint.new(0.5, Config.Theme.Accent),
+            ColorSequenceKeypoint.new(1, Config.Theme.PrimaryDark),
+        }); tBarG.Parent = tBar
+        -- Animate in
+        SafeTween(toast, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {BackgroundTransparency = 0.15})
+        SafeTween(ts, TweenInfo.new(0.3), {Transparency = 0.2})
+        -- Progress bar shrinks
+        SafeTween(tBar, TweenInfo.new(3.5, Enum.EasingStyle.Linear), {Size = UDim2.new(0, 0, 0, 2)})
+        -- Auto dismiss
+        task.delay(3.8, function()
+            SafeTween(toast, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1, Position = UDim2.new(1, 20, 0, toast.Position.Y.Offset)})
+            SafeTween(tL, TweenInfo.new(0.3), {TextTransparency = 1})
+            SafeTween(tIcon, TweenInfo.new(0.3), {TextTransparency = 1})
+            SafeTween(tBar, TweenInfo.new(0.3), {BackgroundTransparency = 1})
+            SafeTween(tGlow, TweenInfo.new(0.3), {BackgroundTransparency = 1})
+            task.wait(0.5); if toast.Parent then toast:Destroy() end
+        end)
     end
 
     -- ══════ MAIN FRAME ══════
@@ -2001,8 +2048,8 @@ local function BuildMainUI()
     hTitle.BackgroundTransparency = 1; hTitle.Text = "MEDUSA ENGINE"; hTitle.TextColor3 = Config.Theme.Primary
     hTitle.Font = Enum.Font.GothamBlack; hTitle.TextSize = 16; hTitle.TextXAlignment = Enum.TextXAlignment.Left; hTitle.ZIndex = 12; hTitle.Parent = header
 
-    local hSub = Instance.new("TextLabel"); hSub.Size = UDim2.new(0, 250, 0, 14); hSub.Position = UDim2.new(0, 50, 0, 26)
-    hSub.BackgroundTransparency = 1; hSub.Text = "Cobra Edition · v" .. Config.Version .. " · 96 Functions · Draggable · ActiveHUD"
+    local hSub = Instance.new("TextLabel"); hSub.Size = UDim2.new(0, 280, 0, 14); hSub.Position = UDim2.new(0, 50, 0, 26)
+    hSub.BackgroundTransparency = 1; hSub.Text = "Cobra Edition · v" .. Config.Version .. " · 96 Fn · Premium UI · Sound FX"
     hSub.TextColor3 = Config.Theme.TextDim; hSub.Font = Enum.Font.Gotham; hSub.TextSize = 11
     hSub.TextXAlignment = Enum.TextXAlignment.Left; hSub.ZIndex = 12; hSub.Parent = header
 
@@ -2063,7 +2110,18 @@ local function BuildMainUI()
     local tabLay = Instance.new("UIListLayout"); tabLay.FillDirection = Enum.FillDirection.Horizontal
     tabLay.SortOrder = Enum.SortOrder.LayoutOrder; tabLay.Padding = UDim.new(0, 0); tabLay.Parent = tabBar
 
-    local tabs = {"🐍 Combat", "🐍 Vision", "🐍 Movement", "🐍 World&Utl", "🐍 HUD"}
+    -- ══════ BREATHING UISTROKE (Main Frame) ══════
+    task.spawn(function()
+        while mainStroke and mainStroke.Parent do
+            SafeTween(mainStroke, TweenInfo.new(2.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Color = Config.Theme.Primary, Transparency = 0.1})
+            task.wait(2.5)
+            if not mainStroke or not mainStroke.Parent then break end
+            SafeTween(mainStroke, TweenInfo.new(2.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Color = Config.Theme.PrimaryDark, Transparency = 0.5})
+            task.wait(2.5)
+        end
+    end)
+
+    local tabs = {"🐍 Combat", "🐍 Vision", "🐍 Movement", "🐍 World&Utl", "🐍 HUD", "⚙ Settings"}
     local tabButtons = {}
     local tabPages = {}
 
@@ -2138,7 +2196,17 @@ local function BuildMainUI()
         local isOn = false
         local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 1, 0); btn.BackgroundTransparency = 1
         btn.Text = ""; btn.ZIndex = 14; btn.Parent = card
+        -- Hover effects (0.9 → 0.7 transparency shift)
+        btn.MouseEnter:Connect(function()
+            SafeTween(card, TweenInfo.new(0.15), {BackgroundColor3 = Config.Theme.CardHover})
+            SafeTween(cS, TweenInfo.new(0.15), {Color = isOn and Config.Theme.Primary or Color3.fromRGB(50,50,50)})
+        end)
+        btn.MouseLeave:Connect(function()
+            SafeTween(card, TweenInfo.new(0.2), {BackgroundColor3 = Config.Theme.Card})
+            SafeTween(cS, TweenInfo.new(0.2), {Color = isOn and Config.Theme.PrimaryDark or Color3.fromRGB(35,35,35)})
+        end)
         btn.MouseButton1Click:Connect(function()
+            PlayClickSound()
             isOn = not isOn
             if isOn then
                 SafeTween(tBg, TweenInfo.new(0.2), {BackgroundColor3 = Config.Theme.PrimaryDark})
@@ -2212,8 +2280,22 @@ local function BuildMainUI()
         local lbl = Instance.new("TextLabel"); lbl.Name = "Label"; lbl.Size = UDim2.new(1, -16, 1, 0); lbl.Position = UDim2.new(0, 10, 0, 0)
         lbl.BackgroundTransparency = 1; lbl.Text = "▶ " .. name; lbl.TextColor3 = Config.Theme.Text
         lbl.Font = Enum.Font.Gotham; lbl.TextSize = 12; lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.ZIndex = 12; lbl.Parent = btn
+        -- Hover effects
+        btn.MouseEnter:Connect(function()
+            SafeTween(btn, TweenInfo.new(0.15), {BackgroundColor3 = Config.Theme.CardHover})
+            SafeTween(bS, TweenInfo.new(0.15), {Color = Color3.fromRGB(50,50,50)})
+            SafeTween(lbl, TweenInfo.new(0.15), {TextColor3 = Config.Theme.Primary})
+        end)
+        btn.MouseLeave:Connect(function()
+            SafeTween(btn, TweenInfo.new(0.2), {BackgroundColor3 = Config.Theme.Card})
+            SafeTween(bS, TweenInfo.new(0.2), {Color = Color3.fromRGB(35,35,35)})
+            SafeTween(lbl, TweenInfo.new(0.2), {TextColor3 = Config.Theme.Text})
+        end)
         btn.MouseButton1Click:Connect(function()
+            PlayClickSound()
             SafeTween(bS, TweenInfo.new(0.1), {Color = Config.Theme.Primary})
+            SafeTween(btn, TweenInfo.new(0.05), {BackgroundColor3 = Config.Theme.PrimaryDark})
+            task.delay(0.15, function() SafeTween(btn, TweenInfo.new(0.2), {BackgroundColor3 = Config.Theme.Card}) end)
             task.delay(0.3, function() SafeTween(bS, TweenInfo.new(0.2), {Color = Color3.fromRGB(35,35,35)}) end)
             ShowToast(name .. " executed"); if callback then callback() end
         end)
