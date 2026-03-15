@@ -549,23 +549,42 @@ local function PlayCinematicIntro(screenGui, callback)
     centerContainer.ZIndex = 110
     centerContainer.Parent = introFrame
 
-    -- ╔═══════════════════════════════════════════════╗
-    -- ║  COBRA NEON — O Símbolo da Medusa            ║
-    -- ╚═══════════════════════════════════════════════╝
+    -- ╔═══════════════════════════════════════════════════════════╗
+    -- ║  COBRA NEON — O Símbolo da Medusa (v1.0.1 FIX)         ║
+    -- ║  Sem UIStroke/UICorner em ImageLabel (causa quadrado)   ║
+    -- ║  Glow = cópia da cobra maior por trás (neon real)       ║
+    -- ╚═══════════════════════════════════════════════════════════╝
 
-    -- Glow radial atrás da cobra
+    -- LAYER 1: Glow radial difuso (aura ambiente)
+    local cobraAura = Instance.new("ImageLabel")
+    cobraAura.Name = "CobraAura"
+    cobraAura.Size = UDim2.new(0, 0, 0, 0)
+    cobraAura.Position = UDim2.new(0.5, 0, 0, 95)
+    cobraAura.AnchorPoint = Vector2.new(0.5, 0.5)
+    cobraAura.BackgroundTransparency = 1
+    cobraAura.Image = "rbxassetid://5028857084"
+    cobraAura.ImageColor3 = Config.Theme.Primary
+    cobraAura.ImageTransparency = 0.75
+    cobraAura.ScaleType = Enum.ScaleType.Fit
+    cobraAura.ZIndex = 111
+    cobraAura.Parent = centerContainer
+
+    -- LAYER 2: Glow da cobra (cópia da MESMA imagem, maior, semi-transparente)
+    -- Isto cria o efeito neon REAL sem UIStroke
     local cobraGlow = Instance.new("ImageLabel")
     cobraGlow.Name = "CobraGlow"
     cobraGlow.Size = UDim2.new(0, 0, 0, 0)
-    cobraGlow.Position = UDim2.new(0.5, 0, 0, 95)
-    cobraGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+    cobraGlow.Position = UDim2.new(0.5, 0, 0, 20)
+    cobraGlow.AnchorPoint = Vector2.new(0.5, 0)
     cobraGlow.BackgroundTransparency = 1
-    cobraGlow.Image = "rbxassetid://5028857084"
-    cobraGlow.ImageColor3 = Config.Theme.Primary
-    cobraGlow.ImageTransparency = 0.7
-    cobraGlow.ZIndex = 112
+    cobraGlow.Image = Config.CobraAsset  -- MESMA cobra como glow
+    cobraGlow.ImageColor3 = Config.Theme.Accent  -- Verde mais brilhante para glow
+    cobraGlow.ImageTransparency = 0.4
+    cobraGlow.ScaleType = Enum.ScaleType.Fit
+    cobraGlow.ZIndex = 113
     cobraGlow.Parent = centerContainer
 
+    -- LAYER 3: Cobra principal (nítida, por cima de tudo)
     local cobraImage = Instance.new("ImageLabel")
     cobraImage.Name = "CobraNeon"
     cobraImage.Size = UDim2.new(0, 0, 0, 0)
@@ -579,65 +598,64 @@ local function PlayCinematicIntro(screenGui, callback)
     cobraImage.ZIndex = 115
     cobraImage.Parent = centerContainer
 
-    -- UIStroke hipnótico (O Olho de Medusa)
-    local cobraStroke = Instance.new("UIStroke")
-    cobraStroke.Name = "CobraHypnoticStroke"
-    cobraStroke.Color = Config.Theme.Primary
-    cobraStroke.Thickness = 2
-    cobraStroke.Transparency = 0.1
-    cobraStroke.Parent = cobraImage
-
-    local cobraCorner = Instance.new("UICorner")
-    cobraCorner.CornerRadius = UDim.new(0, 8)
-    cobraCorner.Parent = cobraImage
+    -- SEM UIStroke, SEM UICorner — limpo, sem moldura
 
     -- ═══ FASE 1: Cobra desliza para o ecrã ═══
     ConsoleLog("Phase 1: Cobra Neon sliding in...", "SYSTEM")
     task.wait(0.5)
 
+    -- Cobra principal cresce de 0 para 150x150
     local cobraSlideIn = SafeTween(cobraImage,
         TweenInfo.new(1.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
         { Size = UDim2.new(0, 150, 0, 150) }
     )
 
+    -- Glow da cobra cresce ligeiramente MAIOR (offset de +30px cada lado = aura)
     SafeTween(cobraGlow,
         TweenInfo.new(1.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-        { Size = UDim2.new(0, 280, 0, 280) }
+        { Size = UDim2.new(0, 180, 0, 180) }
     )
 
-    -- Loop hipnótico do UIStroke
-    task.spawn(function()
-        while cobraStroke and cobraStroke.Parent and introFrame and introFrame.Parent do
-            SafeTween(cobraStroke,
-                TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-                { Transparency = 1.0, Thickness = 5 }
-            )
-            task.wait(1.2)
-            SafeTween(cobraStroke,
-                TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-                { Transparency = 0.1, Thickness = 2 }
-            )
-            task.wait(1.2)
-        end
-    end)
+    -- Aura ambiente cresce bem grande
+    SafeTween(cobraAura,
+        TweenInfo.new(1.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        { Size = UDim2.new(0, 300, 0, 300) }
+    )
 
-    -- Glow pulse em sincronia
+    -- Loop Hipnótico do Glow (O Olho de Medusa)
+    -- Em vez de UIStroke, o glow PULSA a transparência criando a aura neon
     task.spawn(function()
         while cobraGlow and cobraGlow.Parent and introFrame and introFrame.Parent do
             SafeTween(cobraGlow,
                 TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-                { ImageTransparency = 0.35 }
+                { ImageTransparency = 0.2 }  -- Mais visível (brilho máximo)
             )
             task.wait(1.2)
             SafeTween(cobraGlow,
                 TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-                { ImageTransparency = 0.85 }
+                { ImageTransparency = 0.8 }  -- Quase invisível (brilho mínimo)
             )
             task.wait(1.2)
         end
     end)
 
-    -- Espera cobra
+    -- Aura ambiente pulsa em sincronia (mais lento, mais subtil)
+    task.spawn(function()
+        while cobraAura and cobraAura.Parent and introFrame and introFrame.Parent do
+            SafeTween(cobraAura,
+                TweenInfo.new(1.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                { ImageTransparency = 0.55 }
+            )
+            task.wait(1.8)
+            SafeTween(cobraAura,
+                TweenInfo.new(1.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                { ImageTransparency = 0.9 }
+            )
+            task.wait(1.8)
+        end
+    end)
+
+    -- Espera cobra terminar o slide
     if cobraSlideIn then cobraSlideIn.Completed:Wait() end
     ConsoleLog("Phase 1 COMPLETE — Cobra fully visible", "SYSTEM")
     task.wait(0.3)
@@ -1373,29 +1391,47 @@ local function BuildMainUI(screenGui)
     headerGradient.Rotation = 90
     headerGradient.Parent = header
 
-    -- Cobra icon no header
+    -- Cobra glow no header (cópia maior por trás = neon real)
+    local headerCobraGlow = Instance.new("ImageLabel")
+    headerCobraGlow.Name = "HeaderCobraGlow"
+    headerCobraGlow.Size = UDim2.new(0, 44, 0, 44)
+    headerCobraGlow.Position = UDim2.new(0, 32, 0.5, 0)
+    headerCobraGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+    headerCobraGlow.BackgroundTransparency = 1
+    headerCobraGlow.Image = Config.CobraAsset  -- MESMA cobra, não radial genérico
+    headerCobraGlow.ImageColor3 = Config.Theme.Accent
+    headerCobraGlow.ImageTransparency = 0.5
+    headerCobraGlow.ScaleType = Enum.ScaleType.Fit
+    headerCobraGlow.ZIndex = 13
+    headerCobraGlow.Parent = header
+
+    -- Cobra icon no header (nítida, por cima)
     local headerCobra = Instance.new("ImageLabel")
+    headerCobra.Name = "HeaderCobra"
     headerCobra.Size = UDim2.new(0, 32, 0, 32)
     headerCobra.Position = UDim2.new(0, 16, 0.5, 0)
     headerCobra.AnchorPoint = Vector2.new(0, 0.5)
     headerCobra.BackgroundTransparency = 1
     headerCobra.Image = Config.CobraAsset
     headerCobra.ImageColor3 = Config.Theme.Primary
+    headerCobra.ImageTransparency = 0
     headerCobra.ScaleType = Enum.ScaleType.Fit
     headerCobra.ZIndex = 14
     headerCobra.Parent = header
 
-    -- Glow atrás da cobra header
-    local headerCobraGlow = Instance.new("ImageLabel")
-    headerCobraGlow.Size = UDim2.new(0, 50, 0, 50)
-    headerCobraGlow.Position = UDim2.new(0, 32, 0.5, 0)
-    headerCobraGlow.AnchorPoint = Vector2.new(0.5, 0.5)
-    headerCobraGlow.BackgroundTransparency = 1
-    headerCobraGlow.Image = "rbxassetid://5028857084"
-    headerCobraGlow.ImageColor3 = Config.Theme.Primary
-    headerCobraGlow.ImageTransparency = 0.75
-    headerCobraGlow.ZIndex = 13
-    headerCobraGlow.Parent = header
+    -- Pulse subtil no glow do header
+    task.spawn(function()
+        while headerCobraGlow and headerCobraGlow.Parent do
+            SafeTween(headerCobraGlow, TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+                ImageTransparency = 0.3
+            })
+            task.wait(1.5)
+            SafeTween(headerCobraGlow, TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+                ImageTransparency = 0.7
+            })
+            task.wait(1.5)
+        end
+    end)
 
     -- Título
     local headerTitle = Instance.new("TextLabel")
