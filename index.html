@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medusa Universal Engine</title>
+<style>
+  /* ══════════════════════════════════════════════════════════════
+     CONFIG — Variáveis Globais de Tema
+     ══════════════════════════════════════════════════════════════ */
+  :root {
+    --emerald: #00C96B;
+    --emerald-dark: #00793F;
+    --emerald-glow: #00FF88;
+    --bg-primary: #000000;
+    --bg-secondary: #0A0A0A;
+    --bg-card: #0D0D0D;
+    --bg-card-hover: #111111;
+    --border-color: #1A1A1A;
+    --text-primary: #E0E0E0;
+    --text-secondary: #707070;
+    --neon-white: #FFFFFF;
+    --font-main: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font-mono: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     RESET & BASE
+     ══════════════════════════════════════════════════════════════ */
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-primary);
+    font-family: var(--font-main);
+    color: var(--text-primary);
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     INTRO — ScreenGui (IgnoreGuiInset, DisplayOrder=1000000)
+     ══════════════════════════════════════════════════════════════ */
+  #intro-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000000;
+    background: var(--bg-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.8s ease;
+  }
+
+  #intro-overlay.fade-out {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Logo: M E D U S A com UIStroke Verde Esmeralda pulsando */
+  .logo-text {
+    font-family: var(--font-mono);
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 900;
+    letter-spacing: 0.6em;
+    color: transparent;
+    -webkit-text-stroke: 2px var(--emerald);
+    text-shadow: none;
+    position: relative;
+    animation: logoPulse 2.4s ease-in-out infinite;
+  }
+
+  @keyframes logoPulse {
+    0%, 100% { 
+      -webkit-text-stroke-color: rgba(0, 201, 107, 0.2);
+      filter: drop-shadow(0 0 4px rgba(0, 201, 107, 0.05));
+    }
+    50% { 
+      -webkit-text-stroke-color: rgba(0, 201, 107, 1.0);
+      filter: drop-shadow(0 0 30px rgba(0, 255, 136, 0.6))
+             drop-shadow(0 0 60px rgba(0, 201, 107, 0.3));
+    }
+  }
+
+  .logo-subtitle {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.5em;
+    color: var(--text-secondary);
+    margin-top: 1rem;
+    text-transform: uppercase;
+    opacity: 0;
+    animation: subtitleFadeIn 1s ease 1s forwards;
+  }
+
+  @keyframes subtitleFadeIn {
+    to { opacity: 1; }
+  }
+
+  /* Barra Neon: UIGradient 3 pontos — Verde Escuro > Branco > Verde Escuro */
+  .neon-bar-container {
+    margin-top: 3rem;
+    width: min(400px, 80vw);
+    height: 3px;
+    background: #111;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    opacity: 0;
+    animation: barFadeIn 0.5s ease 1.5s forwards;
+  }
+
+  @keyframes barFadeIn {
+    to { opacity: 1; }
+  }
+
+  .neon-bar-fill {
+    width: 100%;
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, 
+      var(--emerald-dark) 0%, 
+      var(--neon-white) 50%, 
+      var(--emerald-dark) 100%
+    );
+    background-size: 200% 100%;
+    animation: neonSweep 1.5s linear infinite;
+    box-shadow: 0 0 10px var(--emerald), 0 0 20px rgba(0, 201, 107, 0.3);
+  }
+
+  @keyframes neonSweep {
+    0% { background-position: -100% 0; }
+    100% { background-position: 100% 0; }
+  }
+
+  /* Progress bar real por baixo */
+  .progress-track {
+    margin-top: 0.5rem;
+    width: min(400px, 80vw);
+    height: 2px;
+    background: #0A0A0A;
+    border-radius: 2px;
+    overflow: hidden;
+    opacity: 0;
+    animation: barFadeIn 0.5s ease 1.8s forwards;
+  }
+
+  .progress-fill {
+    width: 0%;
+    height: 100%;
+    background: var(--emerald);
+    border-radius: 2px;
+    transition: width 0.15s linear;
+    box-shadow: 0 0 6px var(--emerald);
+  }
+
+  .loading-status {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--emerald-dark);
+    margin-top: 1rem;
+    letter-spacing: 0.15em;
+    opacity: 0;
+    animation: barFadeIn 0.4s ease 2s forwards;
+    min-height: 1.2em;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     MAIN FRAME — Slide Up com EasingStyle.Back
+     ══════════════════════════════════════════════════════════════ */
+  #main-frame {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999999;
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  #main-frame.active {
+    pointer-events: auto;
+    opacity: 1;
+  }
+
+  .main-panel {
+    width: min(520px, 92vw);
+    max-height: 88vh;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+    transform: translateY(120vh);
+    transition: transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 0 60px rgba(0, 201, 107, 0.08),
+                0 20px 60px rgba(0, 0, 0, 0.8);
+  }
+
+  #main-frame.active .main-panel {
+    transform: translateY(0);
+  }
+
+  /* ── Title Bar ── */
+  .title-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+    cursor: default;
+  }
+
+  .title-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .title-icon {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--emerald);
+    box-shadow: 0 0 8px var(--emerald), 0 0 16px rgba(0, 201, 107, 0.3);
+    animation: iconPulse 3s ease-in-out infinite;
+  }
+
+  @keyframes iconPulse {
+    0%, 100% { box-shadow: 0 0 4px var(--emerald); }
+    50% { box-shadow: 0 0 12px var(--emerald), 0 0 24px rgba(0, 201, 107, 0.4); }
+  }
+
+  .title-name {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    color: var(--emerald);
+  }
+
+  .title-version {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--text-secondary);
+    letter-spacing: 0.1em;
+  }
+
+  .title-controls {
+    display: flex;
+    gap: 6px;
+  }
+
+  .title-btn {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid #2A2A2A;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .title-btn:hover { background: #1A1A1A; }
+  .title-btn.close:hover { background: #FF3B3B22; border-color: #FF3B3B44; }
+  .title-btn.minimize:hover { background: #FFB80022; border-color: #FFB80044; }
+
+  /* ── Tab Navigation ── */
+  .tab-nav {
+    display: flex;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0 12px;
+  }
+
+  .tab-btn {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    padding: 10px 18px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    position: relative;
+    transition: color 0.3s ease;
+    text-transform: uppercase;
+  }
+
+  .tab-btn:hover { color: var(--text-primary); }
+
+  .tab-btn.active {
+    color: var(--emerald);
+  }
+
+  .tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 20%;
+    width: 60%;
+    height: 2px;
+    background: var(--emerald);
+    border-radius: 2px 2px 0 0;
+    box-shadow: 0 0 8px var(--emerald);
+  }
+
+  /* ── Content Area ── */
+  .tab-content-area {
+    padding: 16px 20px;
+    overflow-y: auto;
+    max-height: calc(88vh - 130px);
+    scrollbar-width: thin;
+    scrollbar-color: #1A1A1A transparent;
+  }
+
+  .tab-content-area::-webkit-scrollbar { width: 4px; }
+  .tab-content-area::-webkit-scrollbar-track { background: transparent; }
+  .tab-content-area::-webkit-scrollbar-thumb { background: #1A1A1A; border-radius: 4px; }
+
+  .tab-page { display: none; }
+  .tab-page.active { display: block; }
+
+  /* ── Section Header ── */
+  .section-header {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-header::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-color);
+  }
+
+  /* ── Function Card ── */
+  .func-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    transition: all 0.25s ease;
+  }
+
+  .func-card:hover {
+    background: var(--bg-card-hover);
+    border-color: #222;
+  }
+
+  .func-card.active-card {
+    border-color: rgba(0, 201, 107, 0.25);
+    box-shadow: 0 0 20px rgba(0, 201, 107, 0.05);
+  }
+
+  .func-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+
+  .func-name {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.05em;
+  }
+
+  .func-desc {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+
+  /* ── Toggle Switch ── */
+  .toggle-switch {
+    width: 38px;
+    height: 20px;
+    background: #1A1A1A;
+    border: 1px solid #2A2A2A;
+    border-radius: 20px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.35s ease;
+    flex-shrink: 0;
+  }
+
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #333;
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .toggle-switch.on {
+    background: rgba(0, 201, 107, 0.2);
+    border-color: var(--emerald);
+    box-shadow: 0 0 10px rgba(0, 201, 107, 0.2);
+  }
+
+  .toggle-switch.on::after {
+    left: 20px;
+    background: var(--emerald);
+    box-shadow: 0 0 8px var(--emerald);
+  }
+
+  /* ── Slider ── */
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+  }
+
+  .slider-track {
+    flex: 1;
+    height: 4px;
+    background: #1A1A1A;
+    border-radius: 4px;
+    position: relative;
+    cursor: pointer;
+    overflow: visible;
+  }
+
+  .slider-fill-bar {
+    height: 100%;
+    background: var(--emerald);
+    border-radius: 4px;
+    box-shadow: 0 0 8px rgba(0, 201, 107, 0.3);
+    position: relative;
+    transition: width 0.05s linear;
+  }
+
+  .slider-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--emerald);
+    border: 2px solid var(--bg-primary);
+    position: absolute;
+    right: -7px;
+    top: 50%;
+    transform: translateY(-50%);
+    box-shadow: 0 0 10px rgba(0, 201, 107, 0.4);
+    transition: transform 0.15s ease;
+    pointer-events: none;
+  }
+
+  .slider-thumb:hover, .slider-track:active .slider-thumb {
+    transform: translateY(-50%) scale(1.2);
+  }
+
+  .slider-value {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--emerald);
+    min-width: 42px;
+    text-align: right;
+    font-weight: 600;
+  }
+
+  .slider-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+  }
+
+  /* ── Status Indicator ── */
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #333;
+    display: inline-block;
+    margin-right: 6px;
+    transition: all 0.3s ease;
+  }
+
+  .status-dot.live {
+    background: var(--emerald);
+    box-shadow: 0 0 8px var(--emerald);
+  }
+
+  /* ── Console Log ── */
+  .console-area {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    line-height: 1.8;
+    max-height: 260px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #1A1A1A transparent;
+  }
+
+  .console-area::-webkit-scrollbar { width: 3px; }
+  .console-area::-webkit-scrollbar-thumb { background: #1A1A1A; border-radius: 3px; }
+
+  .log-line { display: flex; gap: 8px; }
+  .log-time { color: #333; white-space: nowrap; }
+  .log-prefix { color: var(--emerald-dark); white-space: nowrap; }
+  .log-msg { color: var(--text-secondary); }
+  .log-msg.success { color: var(--emerald); }
+  .log-msg.warn { color: #FFB800; }
+  .log-msg.error { color: #FF4444; }
+
+  /* ── Fly Visualizer ── */
+  .fly-viz {
+    margin-top: 12px;
+    padding: 14px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    height: 100px;
+  }
+
+  .fly-grid {
+    position: absolute;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,201,107,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,201,107,0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  .fly-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--emerald);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.3s ease;
+    box-shadow: 0 0 12px var(--emerald);
+  }
+
+  .fly-indicator.flying {
+    animation: flyFloat 2s ease-in-out infinite;
+  }
+
+  @keyframes flyFloat {
+    0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+    25% { transform: translate(-50%, -50%) translateY(-15px) translateX(10px); }
+    50% { transform: translate(-50%, -50%) translateY(-25px); }
+    75% { transform: translate(-50%, -50%) translateY(-15px) translateX(-10px); }
+  }
+
+  .fly-label {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    color: #333;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  /* ── Keybind Badge ── */
+  .keybind {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    background: #111;
+    border: 1px solid #222;
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: #555;
+    display: inline-block;
+    margin-left: 6px;
+  }
+
+  /* ── Info Footer ── */
+  .panel-footer {
+    padding: 10px 20px;
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .footer-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--text-secondary);
+  }
+
+  .footer-ping {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: #333;
+  }
+
+  /* ── Particles ── */
+  .particle-field {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 999998;
+    overflow: hidden;
+  }
+
+  .particle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: var(--emerald);
+    border-radius: 50%;
+    opacity: 0;
+    animation: particleFloat linear infinite;
+  }
+
+  @keyframes particleFloat {
+    0% { opacity: 0; transform: translateY(100vh) scale(0); }
+    10% { opacity: 0.4; }
+    90% { opacity: 0.1; }
+    100% { opacity: 0; transform: translateY(-10vh) scale(1); }
+  }
+
+  /* ── Notification Toast ── */
+  .toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000001;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .toast {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    padding: 10px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--emerald);
+    border-radius: 6px;
+    color: var(--text-primary);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    transform: translateX(120%);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-width: 300px;
+  }
+
+  .toast.show { transform: translateX(0); }
+  .toast.hide { transform: translateX(120%); }
+
+  /* ── Scan Line subtle ── */
+  #scanline {
+    position: fixed;
+    inset: 0;
+    z-index: 1000001;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    opacity: 0.5;
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════
+     INTRO OVERLAY — Cinematográfica
+     ══════════════════════════════════════════════════════════════ -->
+<div id="intro-overlay">
+  <div class="logo-text">M E D U S A</div>
+  <div class="logo-subtitle">Universal Engine v1.0.0</div>
+  <div class="neon-bar-container">
+    <div class="neon-bar-fill"></div>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="progress-fill"></div>
+  </div>
+  <div class="loading-status" id="loading-status"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     PARTICLE FIELD
+     ══════════════════════════════════════════════════════════════ -->
+<div class="particle-field" id="particle-field"></div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     MAIN FRAME — Panel Principal
+     ══════════════════════════════════════════════════════════════ -->
+<div id="main-frame">
+  <div class="main-panel">
+    <!-- Title Bar -->
+    <div class="title-bar">
+      <div class="title-left">
+        <div class="title-icon"></div>
+        <span class="title-name">MEDUSA</span>
+        <span class="title-version">v1.0.0 — Universal</span>
+      </div>
+      <div class="title-controls">
+        <div class="title-btn minimize" onclick="toggleMinimize()"></div>
+        <div class="title-btn close" onclick="closePanel()"></div>
+      </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+      <button class="tab-btn active" data-tab="movement">Movement</button>
+      <button class="tab-btn" data-tab="visuals">Visuals</button>
+      <button class="tab-btn" data-tab="console">Console</button>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content-area">
+
+      <!-- ═══ MOVEMENT TAB ═══ -->
+      <div class="tab-page active" id="tab-movement">
+
+        <div class="section-header">Speed Controls</div>
+
+        <!-- WalkSpeed -->
+        <div class="func-card" id="card-walkspeed">
+          <div class="func-header">
+            <div>
+              <span class="func-name"><span class="status-dot" id="dot-ws"></span>WalkSpeed</span>
+              <div class="func-desc">Controla a velocidade de movimento do personagem</div>
+            </div>
+            <div class="toggle-switch" id="toggle-ws" onclick="toggleWalkSpeed()"></div>
+          </div>
+          <div class="slider-row" id="slider-ws-row" style="opacity: 0.3; pointer-events: none;">
+            <span class="slider-label">16</span>
+            <div class="slider-track" id="slider-ws-track">
+              <div class="slider-fill-bar" id="slider-ws-fill" style="width: 10%;">
+                <div class="slider-thumb"></div>
+              </div>
+            </div>
+            <span class="slider-value" id="val-ws">16</span>
+          </div>
+        </div>
+
+        <!-- JumpPower -->
+        <div class="func-card" id="card-jumppower">
+          <div class="func-header">
+            <div>
+              <span class="func-name"><span class="status-dot" id="dot-jp"></span>JumpPower</span>
+              <div class="func-desc">Controla a potência de salto do personagem</div>
+            </div>
+            <div class="toggle-switch" id="toggle-jp" onclick="toggleJumpPower()"></div>
+          </div>
+          <div class="slider-row" id="slider-jp-row" style="opacity: 0.3; pointer-events: none;">
+            <span class="slider-label">50</span>
+            <div class="slider-track" id="slider-jp-track">
+              <div class="slider-fill-bar" id="slider-jp-fill" style="width: 18%;">
+                <div class="slider-thumb"></div>
+              </div>
+            </div>
+            <span class="slider-value" id="val-jp">50</span>
+          </div>
+        </div>
+
+        <div class="section-header">Advanced Movement</div>
+
+        <!-- Infinite Jump -->
+        <div class="func-card" id="card-infjump">
+          <div class="func-header">
+            <div>
+              <span class="func-name"><span class="status-dot" id="dot-ij"></span>Infinite Jump</span>
+              <span class="keybind">Space</span>
+              <div class="func-desc">Pula infinitamente enquanto mantiver a tecla pressionada</div>
+            </div>
+            <div class="toggle-switch" id="toggle-ij" onclick="toggleInfJump()"></div>
+          </div>
+        </div>
+
+        <!-- Fly Universal -->
+        <div class="func-card" id="card-fly">
+          <div class="func-header">
+            <div>
+              <span class="func-name"><span class="status-dot" id="dot-fly"></span>Fly Universal</span>
+              <span class="keybind">F</span>
+              <div class="func-desc">Sistema de voo via CFrame — indetectável por speed checks</div>
+            </div>
+            <div class="toggle-switch" id="toggle-fly" onclick="toggleFly()"></div>
+          </div>
+          <div class="fly-viz" id="fly-viz">
+            <div class="fly-grid"></div>
+            <div class="fly-indicator" id="fly-dot"></div>
+            <div class="fly-label" id="fly-status-label">Grounded</div>
+          </div>
+          <div class="slider-row" id="slider-fly-row" style="opacity: 0.3; pointer-events: none;">
+            <span class="slider-label">Fly Speed</span>
+            <div class="slider-track" id="slider-fly-track">
+              <div class="slider-fill-bar" id="slider-fly-fill" style="width: 30%;">
+                <div class="slider-thumb"></div>
+              </div>
+            </div>
+            <span class="slider-value" id="val-fly">60</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ VISUALS TAB ═══ -->
+      <div class="tab-page" id="tab-visuals">
+        <div class="section-header">Rendering</div>
+        <div class="func-card">
+          <div class="func-header">
+            <div>
+              <span class="func-name"><span class="status-dot"></span>Fullbright</span>
+              <div class="func-desc">Remove toda a escuridão e iluminação ambiente</div>
+            </div>
+            <div class="toggle-switch" onclick="this.classList.toggle('on'); showToast('Fullbright ' + (this.classList.contains('on') ? 'ON' : 'OFF'))"></div>
+          </div>
+        </div>
+        <div class="func-card">
+          <div class="func-header">
+            <div>
+              <span class="func-name"><span class="status-dot"></span>ESP Players</span>
+              <div class="func-desc">Mostra caixas e nomes de jogadores através de paredes</div>
+            </div>
+            <div class="toggle-switch" onclick="this.classList.toggle('on'); showToast('ESP ' + (this.classList.contains('on') ? 'ON' : 'OFF'))"></div>
+          </div>
+        </div>
+        <div class="func-card">
+          <div class="func-header">
+            <div>
+              <span class="func-name"><span class="status-dot"></span>Noclip</span>
+              <div class="func-desc">Atravessa paredes e objetos sólidos</div>
+            </div>
+            <div class="toggle-switch" onclick="this.classList.toggle('on'); showToast('Noclip ' + (this.classList.contains('on') ? 'ON' : 'OFF'))"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ CONSOLE TAB ═══ -->
+      <div class="tab-page" id="tab-console">
+        <div class="section-header">Execution Log</div>
+        <div class="console-area" id="console-area"></div>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="panel-footer">
+      <div class="footer-status">
+        <span class="status-dot live"></span>
+        <span>Engine Active</span>
+      </div>
+      <span class="footer-ping" id="ping-display">0ms</span>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- Scanline Overlay -->
+<div id="scanline"></div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     JAVASCRIPT — Medusa Universal Engine
+     ══════════════════════════════════════════════════════════════ -->
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   HARD CLEAN — Limpa variáveis globais antes de iniciar
+   ═══════════════════════════════════════════════════════════════ */
+(() => {
+  if (window._G && window._G.Medusa) {
+    console.log('[Medusa] Hard Clean: Clearing previous instance...');
+    window._G.Medusa = null;
+    delete window._G.Medusa;
+  }
+  window._G = window._G || {};
+  window._G.Medusa = {};
+})();
+
+/* ═══════════════════════════════════════════════════════════════
+   CONFIG TABLE — Definições centrais
+   ═══════════════════════════════════════════════════════════════ */
+const Config = {
+  Version: '1.0.0',
+  Theme: {
+    Emerald: [0, 201, 107],
+    EmeraldHex: '#00C96B',
+    Background: '#000000',
+  },
+  Defaults: {
+    WalkSpeed: 16,
+    JumpPower: 50,
+    FlySpeed: 60,
+  },
+  Limits: {
+    WalkSpeed: { min: 16, max: 200 },
+    JumpPower: { min: 50, max: 300 },
+    FlySpeed: { min: 10, max: 200 },
+  },
+  State: {
+    WalkSpeedEnabled: false,
+    JumpPowerEnabled: false,
+    InfJumpEnabled: false,
+    FlyEnabled: false,
+    WalkSpeedValue: 16,
+    JumpPowerValue: 50,
+    FlySpeedValue: 60,
+  },
+  IntroComplete: false,
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   FUNCTIONS TABLE — Lógica das funções
+   ═══════════════════════════════════════════════════════════════ */
+const Functions = {
+
+  toggleWalkSpeed() {
+    Config.State.WalkSpeedEnabled = !Config.State.WalkSpeedEnabled;
+    const on = Config.State.WalkSpeedEnabled;
+    UI.updateToggle('toggle-ws', on);
+    UI.updateDot('dot-ws', on);
+    UI.updateCard('card-walkspeed', on);
+    UI.updateSliderAccess('slider-ws-row', on);
+    Functions.log(on ? 'WalkSpeed ENABLED → ' + Config.State.WalkSpeedValue : 'WalkSpeed DISABLED → reset to 16', on ? 'success' : '');
+    showToast('WalkSpeed ' + (on ? 'ON → ' + Config.State.WalkSpeedValue : 'OFF'));
+  },
+
+  toggleJumpPower() {
+    Config.State.JumpPowerEnabled = !Config.State.JumpPowerEnabled;
+    const on = Config.State.JumpPowerEnabled;
+    UI.updateToggle('toggle-jp', on);
+    UI.updateDot('dot-jp', on);
+    UI.updateCard('card-jumppower', on);
+    UI.updateSliderAccess('slider-jp-row', on);
+    Functions.log(on ? 'JumpPower ENABLED → ' + Config.State.JumpPowerValue : 'JumpPower DISABLED → reset to 50', on ? 'success' : '');
+    showToast('JumpPower ' + (on ? 'ON → ' + Config.State.JumpPowerValue : 'OFF'));
+  },
+
+  toggleInfJump() {
+    Config.State.InfJumpEnabled = !Config.State.InfJumpEnabled;
+    const on = Config.State.InfJumpEnabled;
+    UI.updateToggle('toggle-ij', on);
+    UI.updateDot('dot-ij', on);
+    UI.updateCard('card-infjump', on);
+    Functions.log(on ? 'Infinite Jump ENABLED' : 'Infinite Jump DISABLED', on ? 'success' : '');
+    showToast('Infinite Jump ' + (on ? 'ON' : 'OFF'));
+  },
+
+  toggleFly() {
+    Config.State.FlyEnabled = !Config.State.FlyEnabled;
+    const on = Config.State.FlyEnabled;
+    UI.updateToggle('toggle-fly', on);
+    UI.updateDot('dot-fly', on);
+    UI.updateCard('card-fly', on);
+    UI.updateSliderAccess('slider-fly-row', on);
+
+    const dot = document.getElementById('fly-dot');
+    const label = document.getElementById('fly-status-label');
+    if (on) {
+      dot.classList.add('flying');
+      label.textContent = 'Airborne — CFrame Mode';
+      label.style.color = Config.Theme.EmeraldHex;
+    } else {
+      dot.classList.remove('flying');
+      label.textContent = 'Grounded';
+      label.style.color = '#333';
+    }
+
+    Functions.log(on ? 'Fly Universal ENABLED — CFrame bypass active' : 'Fly Universal DISABLED', on ? 'success' : '');
+    showToast('Fly ' + (on ? 'ON — CFrame Mode' : 'OFF'));
+  },
+
+  log(msg, type = '') {
+    const area = document.getElementById('console-area');
+    const now = new Date();
+    const time = now.toTimeString().split(' ')[0];
+    const line = document.createElement('div');
+    line.className = 'log-line';
+    line.innerHTML = `<span class="log-time">${time}</span><span class="log-prefix">[Medusa]</span><span class="log-msg ${type}">${msg}</span>`;
+    area.appendChild(line);
+    area.scrollTop = area.scrollHeight;
+  }
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   UI TABLE — Manipulação de interface
+   ═══════════════════════════════════════════════════════════════ */
+const UI = {
+
+  updateToggle(id, on) {
+    const el = document.getElementById(id);
+    if (on) el.classList.add('on');
+    else el.classList.remove('on');
+  },
+
+  updateDot(id, on) {
+    const el = document.getElementById(id);
+    if (on) el.classList.add('live');
+    else el.classList.remove('live');
+  },
+
+  updateCard(id, on) {
+    const el = document.getElementById(id);
+    if (on) el.classList.add('active-card');
+    else el.classList.remove('active-card');
+  },
+
+  updateSliderAccess(id, on) {
+    const el = document.getElementById(id);
+    el.style.opacity = on ? '1' : '0.3';
+    el.style.pointerEvents = on ? 'auto' : 'none';
+  },
+
+  initTabs() {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+  },
+
+  initSlider(trackId, fillId, valueId, stateKey, limits) {
+    const track = document.getElementById(trackId);
+    const fill = document.getElementById(fillId);
+    const valueEl = document.getElementById(valueId);
+    let dragging = false;
+
+    function update(e) {
+      const rect = track.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      let pct = (clientX - rect.left) / rect.width;
+      pct = Math.max(0, Math.min(1, pct));
+      const val = Math.round(limits.min + pct * (limits.max - limits.min));
+      Config.State[stateKey] = val;
+      fill.style.width = (pct * 100) + '%';
+      valueEl.textContent = val;
+    }
+
+    track.addEventListener('mousedown', (e) => { dragging = true; update(e); });
+    track.addEventListener('touchstart', (e) => { dragging = true; update(e); }, { passive: true });
+    window.addEventListener('mousemove', (e) => { if (dragging) update(e); });
+    window.addEventListener('touchmove', (e) => { if (dragging) update(e); }, { passive: true });
+    window.addEventListener('mouseup', () => { 
+      if (dragging) {
+        dragging = false;
+        Functions.log(stateKey.replace('Value','') + ' set to ' + Config.State[stateKey], 'success');
+      }
+    });
+    window.addEventListener('touchend', () => { 
+      if (dragging) {
+        dragging = false;
+        Functions.log(stateKey.replace('Value','') + ' set to ' + Config.State[stateKey], 'success');
+      }
+    });
+  },
+
+  spawnParticles() {
+    const field = document.getElementById('particle-field');
+    for (let i = 0; i < 30; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.left = Math.random() * 100 + '%';
+      p.style.animationDuration = (6 + Math.random() * 10) + 's';
+      p.style.animationDelay = (Math.random() * 8) + 's';
+      p.style.width = (1 + Math.random() * 2) + 'px';
+      p.style.height = p.style.width;
+      field.appendChild(p);
+    }
+  }
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   INTRO SEQUENCE — Loading Cinematográfico
+   ═══════════════════════════════════════════════════════════════ */
+function runIntro() {
+  const progressBar = document.getElementById('progress-fill');
+  const statusEl = document.getElementById('loading-status');
+
+  const steps = [
+    { pct: 5,   msg: 'Initializing _G.Medusa...',        delay: 400 },
+    { pct: 15,  msg: 'Hard Clean — purging globals...',   delay: 350 },
+    { pct: 25,  msg: 'Loading Config table...',           delay: 300 },
+    { pct: 35,  msg: 'Building UI framework...',          delay: 400 },
+    { pct: 50,  msg: 'Registering Functions table...',    delay: 350 },
+    { pct: 62,  msg: 'Hooking WalkSpeed module...',       delay: 250 },
+    { pct: 70,  msg: 'Hooking JumpPower module...',       delay: 200 },
+    { pct: 78,  msg: 'Hooking InfJump listener...',       delay: 250 },
+    { pct: 86,  msg: 'Compiling Fly CFrame engine...',    delay: 400 },
+    { pct: 93,  msg: 'Bypassing speed detection...',      delay: 350 },
+    { pct: 97,  msg: 'Validating integrity...',           delay: 300 },
+    { pct: 100, msg: 'Engine ready. Welcome.',            delay: 500 },
+  ];
+
+  let idx = 0;
+  function nextStep() {
+    if (idx >= steps.length) {
+      setTimeout(() => {
+        const overlay = document.getElementById('intro-overlay');
+        overlay.classList.add('fade-out');
+        setTimeout(() => {
+          overlay.style.display = 'none';
+          showMainFrame();
+        }, 900);
+      }, 600);
+      return;
+    }
+    const step = steps[idx];
+    progressBar.style.width = step.pct + '%';
+    statusEl.textContent = '> ' + step.msg;
+    idx++;
+    setTimeout(nextStep, step.delay);
+  }
+
+  setTimeout(nextStep, 2200);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SHOW MAIN FRAME — Slide Up (EasingStyle.Back)
+   ═══════════════════════════════════════════════════════════════ */
+function showMainFrame() {
+  Config.IntroComplete = true;
+  const frame = document.getElementById('main-frame');
+  frame.classList.add('active');
+
+  Functions.log('_G.Medusa initialized successfully', 'success');
+  Functions.log('Engine v' + Config.Version + ' — Universal Mode', '');
+  Functions.log('Hard Clean complete — no residual globals', 'success');
+  Functions.log('All modules loaded — 0 injections on character', '');
+  Functions.log('Passive mode active — toggle functions to begin', 'warn');
+
+  UI.spawnParticles();
+  startPingSimulation();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EXPOSED FUNCTIONS — Chamadas dos onclick
+   ═══════════════════════════════════════════════════════════════ */
+function toggleWalkSpeed() { Functions.toggleWalkSpeed(); }
+function toggleJumpPower() { Functions.toggleJumpPower(); }
+function toggleInfJump()   { Functions.toggleInfJump(); }
+function toggleFly()       { Functions.toggleFly(); }
+
+function toggleMinimize() {
+  const panel = document.querySelector('.main-panel');
+  if (panel.style.transform === 'scale(0.95) translateY(80vh)') {
+    panel.style.transform = 'translateY(0)';
+    showToast('Panel Restored');
+  } else {
+    panel.style.transform = 'scale(0.95) translateY(80vh)';
+    showToast('Panel Minimized');
+  }
+}
+
+function closePanel() {
+  const panel = document.querySelector('.main-panel');
+  panel.style.transform = 'translateY(120vh)';
+  showToast('Medusa Engine — Hidden (Press M to toggle)');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TOAST NOTIFICATIONS
+   ═══════════════════════════════════════════════════════════════ */
+function showToast(msg) {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = msg;
+  container.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
+    });
+  });
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+    toast.classList.add('hide');
+    setTimeout(() => toast.remove(), 500);
+  }, 2500);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PING SIMULATION
+   ═══════════════════════════════════════════════════════════════ */
+function startPingSimulation() {
+  const display = document.getElementById('ping-display');
+  setInterval(() => {
+    const ping = Math.floor(20 + Math.random() * 45);
+    display.textContent = ping + 'ms';
+  }, 2000);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   KEYBOARD SHORTCUTS
+   ═══════════════════════════════════════════════════════════════ */
+document.addEventListener('keydown', (e) => {
+  if (!Config.IntroComplete) return;
+
+  if (e.key === 'm' || e.key === 'M') {
+    const frame = document.getElementById('main-frame');
+    const panel = document.querySelector('.main-panel');
+    if (panel.style.transform === 'translateY(120vh)') {
+      panel.style.transform = 'translateY(0)';
+      showToast('Medusa — Visible');
+    } else if (frame.classList.contains('active')) {
+      panel.style.transform = 'translateY(120vh)';
+      showToast('Medusa — Hidden');
+    }
+  }
+
+  if (e.key === 'f' || e.key === 'F') {
+    if (!e.target.closest('input, textarea')) {
+      Functions.toggleFly();
+    }
+  }
+
+  if (e.key === ' ' && Config.State.InfJumpEnabled) {
+    showToast('∞ Jump!');
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   INIT — Ponto de entrada
+   ═══════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  UI.initTabs();
+  UI.initSlider('slider-ws-track', 'slider-ws-fill', 'val-ws', 'WalkSpeedValue', Config.Limits.WalkSpeed);
+  UI.initSlider('slider-jp-track', 'slider-jp-fill', 'val-jp', 'JumpPowerValue', Config.Limits.JumpPower);
+  UI.initSlider('slider-fly-track', 'slider-fly-fill', 'val-fly', 'FlySpeedValue', Config.Limits.FlySpeed);
+  runIntro();
+});
+</script>
+</body>
+</html>
