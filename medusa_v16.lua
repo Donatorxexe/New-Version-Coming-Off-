@@ -42,6 +42,61 @@ local Camera = Workspace.CurrentCamera
 
 _G.MedusaLoaded = true
 
+local function HardCleanCharacter()
+	pcall(function()
+		local char = LocalPlayer.Character
+		if not char then return end
+		local hrp = char:FindFirstChild("HumanoidRootPart")
+		if hrp then
+			hrp.Velocity = Vector3.new(0, 0, 0)
+			hrp.RotVelocity = Vector3.new(0, 0, 0)
+			for _, obj in ipairs(hrp:GetChildren()) do
+				if obj:IsA("BodyVelocity") or obj:IsA("BodyGyro") or obj:IsA("BodyPosition")
+					or obj:IsA("BodyForce") or obj:IsA("BodyThrust") or obj:IsA("BodyAngularVelocity")
+					or obj:IsA("LinearVelocity") or obj:IsA("AlignPosition") or obj:IsA("AlignOrientation")
+					or obj:IsA("VectorForce") then
+					obj:Destroy()
+				end
+			end
+		end
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if hum then
+			hum.PlatformStand = false
+			if hum.WalkSpeed > 100 then hum.WalkSpeed = 16 end
+			if hum.JumpPower > 100 then hum.JumpPower = 50 end
+		end
+		for _, part in ipairs(char:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = (part.Name ~= "Head")
+			end
+		end
+	end)
+end
+
+pcall(function()
+	local mt = getrawmetatable(game)
+	if _G.MedusaOriginalNamecall then
+		setreadonly(mt, false)
+		mt.__namecall = _G.MedusaOriginalNamecall
+		setreadonly(mt, true)
+		_G.MedusaOriginalNamecall = nil
+	end
+	if _G.MedusaOriginalIndex then
+		setreadonly(mt, false)
+		mt.__index = _G.MedusaOriginalIndex
+		setreadonly(mt, true)
+		_G.MedusaOriginalIndex = nil
+	end
+	if _G.MedusaOriginalNewindex then
+		setreadonly(mt, false)
+		mt.__newindex = _G.MedusaOriginalNewindex
+		setreadonly(mt, true)
+		_G.MedusaOriginalNewindex = nil
+	end
+end)
+
+HardCleanCharacter()
+
 _G.MedusaConfig = {
 	Aimbot_Enabled = false,
 	Aimbot_TeamCheck = true,
@@ -1612,19 +1667,29 @@ end
 local function FullEject()
 	_G.MedusaLoaded = false
 	pcall(function()
-		local hum = GetHumanoid()
+		local char = GetCharacter()
+		if not char then return end
+		local hrp = char:FindFirstChild("HumanoidRootPart")
+		if hrp then
+			hrp.Velocity = Vector3.new(0, 0, 0)
+			hrp.RotVelocity = Vector3.new(0, 0, 0)
+			for _, obj in ipairs(hrp:GetChildren()) do
+				if obj:IsA("BodyVelocity") or obj:IsA("BodyGyro") or obj:IsA("BodyPosition")
+					or obj:IsA("BodyForce") or obj:IsA("BodyThrust") or obj:IsA("BodyAngularVelocity")
+					or obj:IsA("LinearVelocity") or obj:IsA("AlignPosition") or obj:IsA("AlignOrientation")
+					or obj:IsA("VectorForce") then
+					obj:Destroy()
+				end
+			end
+		end
+		local hum = char:FindFirstChildOfClass("Humanoid")
 		if hum then
 			hum.WalkSpeed = OriginalWalkSpeed or 16
 			hum.JumpPower = OriginalJumpPower or 50
 			hum.PlatformStand = false
 		end
-	end)
-	pcall(function()
-		local char = GetCharacter()
-		if char then
-			for _, part in ipairs(char:GetDescendants()) do
-				if part:IsA("BasePart") then part.CanCollide = (part.Name ~= "Head") end
-			end
+		for _, part in ipairs(char:GetDescendants()) do
+			if part:IsA("BasePart") then part.CanCollide = (part.Name ~= "Head") end
 		end
 	end)
 	pcall(StopAimbot)
@@ -1666,26 +1731,20 @@ local function FullEject()
 	DisconnectAllSignals()
 	CleanupAllDrawings()
 	pcall(function()
+		local mt = getrawmetatable(game)
 		if _G.MedusaOriginalNamecall then
-			local mt = getrawmetatable(game)
 			setreadonly(mt, false)
 			mt.__namecall = _G.MedusaOriginalNamecall
 			setreadonly(mt, true)
 			_G.MedusaOriginalNamecall = nil
 		end
-	end)
-	pcall(function()
 		if _G.MedusaOriginalIndex then
-			local mt = getrawmetatable(game)
 			setreadonly(mt, false)
 			mt.__index = _G.MedusaOriginalIndex
 			setreadonly(mt, true)
 			_G.MedusaOriginalIndex = nil
 		end
-	end)
-	pcall(function()
 		if _G.MedusaOriginalNewindex then
-			local mt = getrawmetatable(game)
 			setreadonly(mt, false)
 			mt.__newindex = _G.MedusaOriginalNewindex
 			setreadonly(mt, true)
@@ -1785,6 +1844,7 @@ _G.MedusaFunctions = {
 	FullEject = FullEject,
 	RegisterSignal = RegisterSignal,
 	CleanupAllDrawings = CleanupAllDrawings,
+	HardCleanCharacter = HardCleanCharacter,
 }
 
 local Fn = _G.MedusaFunctions
