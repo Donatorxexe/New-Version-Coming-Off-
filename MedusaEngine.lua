@@ -85,7 +85,7 @@ local Camera = Workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
 local Config = {
-    Version = "1.0.4",
+    Version = "1.0.5",
     Name = "MEDUSA",
     ClickSound = "rbxassetid://6895079853",
     Theme = {
@@ -266,32 +266,36 @@ local function MakeDraggable(frame, dragHandle)
     end)
 end
 
--- ══════ ACTIVE MODULES LIST UPDATER ══════
+-- ══════ ACTIVE MODULES LIST UPDATER (v1.0.5 — Anti-Duplicate) ══════
 local function UpdateActiveList(name, isOn)
     local content = _G.Medusa.ActiveListContent
     if not content then return end
 
+    local safeName = "Active_" .. string.gsub(name, "%s", "_")
+
     if isOn then
-        if not content:FindFirstChild("Active_" .. name) then
-            local entry = Instance.new("TextLabel")
-            entry.Name = "Active_" .. name
-            entry.Size = UDim2.new(1, 0, 0, 16)
-            entry.BackgroundTransparency = 1
-            entry.Text = "▸ " .. name
-            entry.TextColor3 = Config.Theme.Accent
-            entry.Font = Enum.Font.Gotham
-            entry.TextSize = 11
-            entry.TextXAlignment = Enum.TextXAlignment.Left
-            entry.TextTransparency = 1
-            entry.ZIndex = 52
-            entry.Parent = content
-            SafeTween(entry, TweenInfo.new(0.3), {TextTransparency = 0})
-        end
+        -- Prevent duplicates: destroy existing before creating new
+        local existing = content:FindFirstChild(safeName)
+        if existing then return end
+
+        local entry = Instance.new("TextLabel")
+        entry.Name = safeName
+        entry.Size = UDim2.new(1, 0, 0, 15)
+        entry.BackgroundTransparency = 1
+        entry.Text = "▸ " .. name
+        entry.TextColor3 = Config.Theme.Accent
+        entry.Font = Enum.Font.Gotham
+        entry.TextSize = 10
+        entry.TextXAlignment = Enum.TextXAlignment.Left
+        entry.TextTransparency = 1
+        entry.ZIndex = 52
+        entry.Parent = content
+        SafeTween(entry, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0})
     else
-        local entry = content:FindFirstChild("Active_" .. name)
+        local entry = content:FindFirstChild(safeName)
         if entry then
-            SafeTween(entry, TweenInfo.new(0.3), {TextTransparency = 1})
-            task.delay(0.35, function()
+            SafeTween(entry, TweenInfo.new(0.25), {TextTransparency = 1})
+            task.delay(0.3, function()
                 if entry and entry.Parent then entry:Destroy() end
             end)
         end
@@ -1970,57 +1974,148 @@ local function BuildMainUI()
     gui.Parent = (syn and syn.protect_gui and CoreGui) or LocalPlayer.PlayerGui
     _G.Medusa.ScreenGui = gui
 
-    -- ══════ TOAST SYSTEM ══════
+    -- ══════ TOAST SYSTEM (Fixed v1.0.5 — Glassmorphism, no huge square) ══════
     local toastContainer = Instance.new("Frame")
-    toastContainer.Size = UDim2.new(0, 260, 1, 0); toastContainer.Position = UDim2.new(1, -270, 0, 0)
-    toastContainer.BackgroundTransparency = 1; toastContainer.ZIndex = 100; toastContainer.Parent = gui
-    local toastLayout = Instance.new("UIListLayout"); toastLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    toastLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom; toastLayout.Padding = UDim.new(0, 5); toastLayout.Parent = toastContainer
+    toastContainer.Name = "ToastContainer"
+    toastContainer.Size = UDim2.new(0, 240, 0, 0)
+    toastContainer.Position = UDim2.new(1, -255, 1, -15)
+    toastContainer.AnchorPoint = Vector2.new(0, 1)
+    toastContainer.AutomaticSize = Enum.AutomaticSize.Y
+    toastContainer.BackgroundTransparency = 1
+    toastContainer.ClipsDescendants = false
+    toastContainer.ZIndex = 100
+    toastContainer.Parent = gui
+    local toastLayout = Instance.new("UIListLayout")
+    toastLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    toastLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+    toastLayout.Padding = UDim.new(0, 6)
+    toastLayout.Parent = toastContainer
 
+    local toastOrder = 0
     local function ShowToast(msg)
         if not State.Notifications then return end
         PlayClickSound()
-        local toast = Instance.new("Frame"); toast.Size = UDim2.new(1, 0, 0, 42)
-        toast.BackgroundColor3 = Color3.fromRGB(10, 10, 10); toast.BorderSizePixel = 0
-        toast.BackgroundTransparency = 1; toast.ZIndex = 101; toast.ClipsDescendants = true; toast.Parent = toastContainer
+        toastOrder = toastOrder + 1
+
+        -- Outer wrapper (AutomaticSize wraps content tightly)
+        local toast = Instance.new("Frame")
+        toast.Name = "Toast_" .. toastOrder
+        toast.Size = UDim2.new(1, 0, 0, 0)
+        toast.AutomaticSize = Enum.AutomaticSize.Y
+        toast.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
+        toast.BackgroundTransparency = 1
+        toast.BorderSizePixel = 0
+        toast.LayoutOrder = toastOrder
+        toast.ZIndex = 101
+        toast.ClipsDescendants = true
+        toast.Parent = toastContainer
         Instance.new("UICorner", toast).CornerRadius = UDim.new(0, 8)
-        local ts = Instance.new("UIStroke"); ts.Color = Config.Theme.PrimaryDark; ts.Thickness = 1; ts.Transparency = 0.3; ts.Parent = toast
-        -- Glassmorphism inner glow top line
-        local tGlow = Instance.new("Frame"); tGlow.Size = UDim2.new(1, 0, 0, 1); tGlow.Position = UDim2.new(0, 0, 0, 0)
-        tGlow.BackgroundColor3 = Config.Theme.Primary; tGlow.BackgroundTransparency = 0.5; tGlow.BorderSizePixel = 0; tGlow.ZIndex = 103; tGlow.Parent = toast
-        local tGlowG = Instance.new("UIGradient"); tGlowG.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(0,0,0)), ColorSequenceKeypoint.new(0.3, Config.Theme.Primary),
-            ColorSequenceKeypoint.new(0.7, Config.Theme.Primary), ColorSequenceKeypoint.new(1, Color3.fromRGB(0,0,0)),
-        }); tGlowG.Parent = tGlow
+
+        local ts = Instance.new("UIStroke")
+        ts.Color = Config.Theme.PrimaryDark
+        ts.Thickness = 1
+        ts.Transparency = 1
+        ts.Parent = toast
+
+        -- Inner padding
+        local tPad = Instance.new("UIPadding")
+        tPad.PaddingTop = UDim.new(0, 6)
+        tPad.PaddingBottom = UDim.new(0, 8)
+        tPad.PaddingLeft = UDim.new(0, 8)
+        tPad.PaddingRight = UDim.new(0, 8)
+        tPad.Parent = toast
+
+        -- Glassmorphism top glow line
+        local tGlow = Instance.new("Frame")
+        tGlow.Size = UDim2.new(1, 16, 0, 1)
+        tGlow.Position = UDim2.new(0, -8, 0, -6)
+        tGlow.BackgroundColor3 = Config.Theme.Primary
+        tGlow.BackgroundTransparency = 0.4
+        tGlow.BorderSizePixel = 0
+        tGlow.ZIndex = 103
+        tGlow.Parent = toast
+        local tGlowG = Instance.new("UIGradient")
+        tGlowG.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(0,0,0)),
+            ColorSequenceKeypoint.new(0.3, Config.Theme.Primary),
+            ColorSequenceKeypoint.new(0.7, Config.Theme.Primary),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(0,0,0)),
+        })
+        tGlowG.Parent = tGlow
+
+        -- Content row
+        local tRow = Instance.new("Frame")
+        tRow.Size = UDim2.new(1, 0, 0, 20)
+        tRow.BackgroundTransparency = 1
+        tRow.ZIndex = 103
+        tRow.Parent = toast
+
         -- Icon
-        local tIcon = Instance.new("TextLabel"); tIcon.Size = UDim2.new(0, 22, 0, 22); tIcon.Position = UDim2.new(0, 8, 0, 6)
-        tIcon.BackgroundTransparency = 1; tIcon.Text = "🐍"; tIcon.TextScaled = true; tIcon.ZIndex = 103; tIcon.Parent = toast
+        local tIcon = Instance.new("TextLabel")
+        tIcon.Size = UDim2.new(0, 18, 0, 18)
+        tIcon.Position = UDim2.new(0, 0, 0, 1)
+        tIcon.BackgroundTransparency = 1
+        tIcon.Text = "🐍"
+        tIcon.TextScaled = true
+        tIcon.ZIndex = 104
+        tIcon.Parent = tRow
+
         -- Text
-        local tL = Instance.new("TextLabel"); tL.Size = UDim2.new(1, -40, 0, 28); tL.Position = UDim2.new(0, 34, 0, 3)
-        tL.BackgroundTransparency = 1; tL.Text = msg; tL.TextColor3 = Config.Theme.Text
-        tL.Font = Enum.Font.Gotham; tL.TextSize = 12; tL.TextXAlignment = Enum.TextXAlignment.Left
-        tL.TextTruncate = Enum.TextTruncate.AtEnd; tL.ZIndex = 103; tL.Parent = toast
-        -- Progress bar (shrinks over time)
-        local tBar = Instance.new("Frame"); tBar.Size = UDim2.new(1, -16, 0, 2); tBar.Position = UDim2.new(0, 8, 1, -6)
-        tBar.BackgroundColor3 = Config.Theme.Primary; tBar.BorderSizePixel = 0; tBar.ZIndex = 103; tBar.Parent = toast
+        local tL = Instance.new("TextLabel")
+        tL.Size = UDim2.new(1, -24, 1, 0)
+        tL.Position = UDim2.new(0, 22, 0, 0)
+        tL.BackgroundTransparency = 1
+        tL.Text = msg
+        tL.TextColor3 = Config.Theme.Text
+        tL.Font = Enum.Font.Gotham
+        tL.TextSize = 11
+        tL.TextXAlignment = Enum.TextXAlignment.Left
+        tL.TextWrapped = true
+        tL.AutomaticSize = Enum.AutomaticSize.Y
+        tL.TextTruncate = Enum.TextTruncate.AtEnd
+        tL.ZIndex = 104
+        tL.Parent = tRow
+
+        -- Progress bar at bottom
+        local tBar = Instance.new("Frame")
+        tBar.Size = UDim2.new(1, 0, 0, 2)
+        tBar.Position = UDim2.new(0, 0, 0, 24)
+        tBar.BackgroundColor3 = Config.Theme.Primary
+        tBar.BorderSizePixel = 0
+        tBar.ZIndex = 104
+        tBar.Parent = toast
         Instance.new("UICorner", tBar).CornerRadius = UDim.new(0, 1)
-        local tBarG = Instance.new("UIGradient"); tBarG.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Config.Theme.PrimaryDark), ColorSequenceKeypoint.new(0.5, Config.Theme.Accent),
+        local tBarG = Instance.new("UIGradient")
+        tBarG.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Config.Theme.PrimaryDark),
+            ColorSequenceKeypoint.new(0.5, Config.Theme.Accent),
             ColorSequenceKeypoint.new(1, Config.Theme.PrimaryDark),
-        }); tBarG.Parent = tBar
-        -- Animate in
-        SafeTween(toast, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {BackgroundTransparency = 0.15})
-        SafeTween(ts, TweenInfo.new(0.3), {Transparency = 0.2})
-        -- Progress bar shrinks
+        })
+        tBarG.Parent = tBar
+
+        -- Animate in: slide from right + fade (glassmorphism = 50% transparent)
+        toast.Position = UDim2.new(0.3, 0, 0, 0)
+        SafeTween(toast, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+            {BackgroundTransparency = 0.5, Position = UDim2.new(0, 0, 0, 0)})
+        SafeTween(ts, TweenInfo.new(0.3), {Transparency = 0.3})
+
+        -- Progress bar shrinks over 3.5s
         SafeTween(tBar, TweenInfo.new(3.5, Enum.EasingStyle.Linear), {Size = UDim2.new(0, 0, 0, 2)})
-        -- Auto dismiss
-        task.delay(3.8, function()
-            SafeTween(toast, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1, Position = UDim2.new(1, 20, 0, toast.Position.Y.Offset)})
-            SafeTween(tL, TweenInfo.new(0.3), {TextTransparency = 1})
-            SafeTween(tIcon, TweenInfo.new(0.3), {TextTransparency = 1})
-            SafeTween(tBar, TweenInfo.new(0.3), {BackgroundTransparency = 1})
-            SafeTween(tGlow, TweenInfo.new(0.3), {BackgroundTransparency = 1})
-            task.wait(0.5); if toast.Parent then toast:Destroy() end
+
+        -- Auto dismiss after 4s
+        task.delay(4, function()
+            if not toast or not toast.Parent then return end
+            SafeTween(toast, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+                {BackgroundTransparency = 1, Position = UDim2.new(0.5, 0, 0, 0)})
+            pcall(function()
+                SafeTween(tL, TweenInfo.new(0.3), {TextTransparency = 1})
+                SafeTween(tIcon, TweenInfo.new(0.3), {TextTransparency = 1})
+                SafeTween(tBar, TweenInfo.new(0.3), {BackgroundTransparency = 1})
+                SafeTween(tGlow, TweenInfo.new(0.3), {BackgroundTransparency = 1})
+                SafeTween(ts, TweenInfo.new(0.3), {Transparency = 1})
+            end)
+            task.wait(0.5)
+            if toast and toast.Parent then toast:Destroy() end
         end)
     end
 
@@ -2049,7 +2144,7 @@ local function BuildMainUI()
     hTitle.Font = Enum.Font.GothamBlack; hTitle.TextSize = 16; hTitle.TextXAlignment = Enum.TextXAlignment.Left; hTitle.ZIndex = 12; hTitle.Parent = header
 
     local hSub = Instance.new("TextLabel"); hSub.Size = UDim2.new(0, 280, 0, 14); hSub.Position = UDim2.new(0, 50, 0, 26)
-    hSub.BackgroundTransparency = 1; hSub.Text = "Cobra Edition · v" .. Config.Version .. " · 96 Fn · Premium UI · Sound FX"
+    hSub.BackgroundTransparency = 1; hSub.Text = "Cobra Edition · v" .. Config.Version .. " · 96 Fn · Predator HUD · Glass FX"
     hSub.TextColor3 = Config.Theme.TextDim; hSub.Font = Enum.Font.Gotham; hSub.TextSize = 11
     hSub.TextXAlignment = Enum.TextXAlignment.Left; hSub.ZIndex = 12; hSub.Parent = header
 
@@ -2672,13 +2767,215 @@ local function BuildMainUI()
         end
     end)
 
-    -- Pulse the ActiveList stroke gently
+    -- Pulse the ActiveList stroke + glow (Breathing effect synchronized)
     task.spawn(function()
         while activeFrame and activeFrame.Parent do
             SafeTween(aGlow, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {BackgroundTransparency = 0.85})
+            SafeTween(aStroke, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Color = Config.Theme.Primary, Transparency = 0.2})
             task.wait(2)
             if not activeFrame or not activeFrame.Parent then break end
             SafeTween(aGlow, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {BackgroundTransparency = 0.5})
+            SafeTween(aStroke, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Color = Config.Theme.PrimaryDark, Transparency = 0.5})
+            task.wait(2)
+        end
+    end)
+
+    -- ══════ TARGET INFO CARD (🎯 Predador HUD — Draggable, Glassmorphism) ══════
+    local targetFrame = Instance.new("Frame")
+    targetFrame.Name = "TargetInfo"
+    targetFrame.Size = UDim2.new(0, 200, 0, 0)
+    targetFrame.Position = UDim2.new(1, -195, 0, 220)
+    targetFrame.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
+    targetFrame.BackgroundTransparency = 0.3
+    targetFrame.BorderSizePixel = 0
+    targetFrame.Visible = false
+    targetFrame.AutomaticSize = Enum.AutomaticSize.Y
+    targetFrame.ClipsDescendants = true
+    targetFrame.ZIndex = 50
+    targetFrame.Parent = gui
+    Instance.new("UICorner", targetFrame).CornerRadius = UDim.new(0, 8)
+
+    local tiStroke = Instance.new("UIStroke")
+    tiStroke.Color = Config.Theme.PrimaryDark
+    tiStroke.Thickness = 1
+    tiStroke.Transparency = 0.4
+    tiStroke.Parent = targetFrame
+
+    -- Glassmorphism glow line (top)
+    local tiGlow = Instance.new("Frame")
+    tiGlow.Size = UDim2.new(1, 0, 0, 1)
+    tiGlow.BackgroundColor3 = Config.Theme.Primary
+    tiGlow.BackgroundTransparency = 0.5
+    tiGlow.BorderSizePixel = 0
+    tiGlow.ZIndex = 51
+    tiGlow.Parent = targetFrame
+    local tiGlowG = Instance.new("UIGradient")
+    tiGlowG.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(0,0,0)),
+        ColorSequenceKeypoint.new(0.3, Config.Theme.Primary),
+        ColorSequenceKeypoint.new(0.7, Config.Theme.Primary),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(0,0,0)),
+    })
+    tiGlowG.Parent = tiGlow
+
+    -- Header (drag handle)
+    local tiHeader = Instance.new("Frame")
+    tiHeader.Name = "DragHandle"
+    tiHeader.Size = UDim2.new(1, 0, 0, 24)
+    tiHeader.Position = UDim2.new(0, 0, 0, 2)
+    tiHeader.BackgroundTransparency = 1
+    tiHeader.ZIndex = 51
+    tiHeader.Parent = targetFrame
+
+    local tiEmoji = Instance.new("TextLabel")
+    tiEmoji.Size = UDim2.new(0, 16, 0, 16)
+    tiEmoji.Position = UDim2.new(0, 8, 0.5, -8)
+    tiEmoji.BackgroundTransparency = 1
+    tiEmoji.Text = "🎯"
+    tiEmoji.TextScaled = true
+    tiEmoji.ZIndex = 52
+    tiEmoji.Parent = tiHeader
+
+    local tiTitle = Instance.new("TextLabel")
+    tiTitle.Size = UDim2.new(1, -30, 1, 0)
+    tiTitle.Position = UDim2.new(0, 28, 0, 0)
+    tiTitle.BackgroundTransparency = 1
+    tiTitle.Text = "TARGET INFO"
+    tiTitle.TextColor3 = Config.Theme.Primary
+    tiTitle.Font = Enum.Font.GothamBold
+    tiTitle.TextSize = 9
+    tiTitle.TextXAlignment = Enum.TextXAlignment.Left
+    tiTitle.ZIndex = 52
+    tiTitle.Parent = tiHeader
+
+    -- Separator
+    local tiSep = Instance.new("Frame")
+    tiSep.Size = UDim2.new(1, -16, 0, 1)
+    tiSep.Position = UDim2.new(0, 8, 0, 27)
+    tiSep.BackgroundColor3 = Config.Theme.PrimaryDark
+    tiSep.BackgroundTransparency = 0.6
+    tiSep.BorderSizePixel = 0
+    tiSep.ZIndex = 51
+    tiSep.Parent = targetFrame
+
+    -- Target content labels
+    local tiContent = Instance.new("Frame")
+    tiContent.Name = "Content"
+    tiContent.Size = UDim2.new(1, 0, 0, 0)
+    tiContent.Position = UDim2.new(0, 0, 0, 30)
+    tiContent.BackgroundTransparency = 1
+    tiContent.AutomaticSize = Enum.AutomaticSize.Y
+    tiContent.ZIndex = 51
+    tiContent.Parent = targetFrame
+
+    local tiLayout = Instance.new("UIListLayout")
+    tiLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    tiLayout.Padding = UDim.new(0, 2)
+    tiLayout.Parent = tiContent
+
+    local tiPad = Instance.new("UIPadding")
+    tiPad.PaddingLeft = UDim.new(0, 8)
+    tiPad.PaddingRight = UDim.new(0, 8)
+    tiPad.PaddingBottom = UDim.new(0, 8)
+    tiPad.Parent = tiContent
+
+    -- Create info labels for target
+    local tiLabels = {}
+    for i, lName in ipairs({"Name", "Health", "Distance", "Tool", "Team"}) do
+        local lbl = Instance.new("TextLabel")
+        lbl.Name = lName
+        lbl.Size = UDim2.new(1, 0, 0, 14)
+        lbl.BackgroundTransparency = 1
+        lbl.Text = lName .. ": --"
+        lbl.TextColor3 = (i == 1) and Config.Theme.Accent or Config.Theme.Text
+        lbl.Font = (i == 1) and Enum.Font.GothamBold or Enum.Font.Gotham
+        lbl.TextSize = (i == 1) and 12 or 10
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+        lbl.LayoutOrder = i
+        lbl.ZIndex = 52
+        lbl.Parent = tiContent
+        tiLabels[lName] = lbl
+    end
+
+    -- Health bar inside target info
+    local tiHpBg = Instance.new("Frame")
+    tiHpBg.Size = UDim2.new(1, 0, 0, 4)
+    tiHpBg.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    tiHpBg.BorderSizePixel = 0
+    tiHpBg.LayoutOrder = 6
+    tiHpBg.ZIndex = 52
+    tiHpBg.Parent = tiContent
+    Instance.new("UICorner", tiHpBg).CornerRadius = UDim.new(0, 2)
+
+    local tiHpFill = Instance.new("Frame")
+    tiHpFill.Size = UDim2.new(1, 0, 1, 0)
+    tiHpFill.BackgroundColor3 = Config.Theme.Primary
+    tiHpFill.BorderSizePixel = 0
+    tiHpFill.ZIndex = 53
+    tiHpFill.Parent = tiHpBg
+    Instance.new("UICorner", tiHpFill).CornerRadius = UDim.new(0, 2)
+    local tiHpGrad = Instance.new("UIGradient")
+    tiHpGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Config.Theme.PrimaryDark),
+        ColorSequenceKeypoint.new(0.5, Config.Theme.Primary),
+        ColorSequenceKeypoint.new(1, Config.Theme.Accent),
+    })
+    tiHpGrad.Parent = tiHpFill
+
+    -- Make TargetInfo draggable
+    MakeDraggable(targetFrame, tiHeader)
+
+    -- Store reference
+    _G.Medusa.TargetInfoFrame = targetFrame
+    _G.Medusa.TargetInfoLabels = tiLabels
+    _G.Medusa.TargetInfoHpFill = tiHpFill
+
+    -- TargetInfo update loop
+    task.spawn(function()
+        while _G.Medusa and _G.Medusa.Active do
+            if State.TargetInfo or State.TargetInfoHUD then
+                local target = GetClosestPlayer(50, false)
+                if target and target.Character then
+                    targetFrame.Visible = true
+                    local hum = target.Character:FindFirstChildOfClass("Humanoid")
+                    local hrp = target.Character:FindFirstChild("HumanoidRootPart")
+                    local root = GetRootPart()
+                    tiLabels["Name"].Text = "🎯 " .. target.DisplayName
+                    if hum then
+                        local hp = math.floor(hum.Health)
+                        local maxHp = math.floor(hum.MaxHealth)
+                        tiLabels["Health"].Text = "HP: " .. hp .. "/" .. maxHp
+                        local ratio = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
+                        SafeTween(tiHpFill, TweenInfo.new(0.3), {Size = UDim2.new(ratio, 0, 1, 0)})
+                        if ratio > 0.6 then tiHpFill.BackgroundColor3 = Config.Theme.Primary
+                        elseif ratio > 0.3 then tiHpFill.BackgroundColor3 = Config.Theme.Yellow
+                        else tiHpFill.BackgroundColor3 = Config.Theme.Red end
+                    end
+                    if hrp and root then
+                        tiLabels["Distance"].Text = "Dist: " .. math.floor((root.Position - hrp.Position).Magnitude) .. "m"
+                    end
+                    local tool = target.Character:FindFirstChildOfClass("Tool")
+                    tiLabels["Tool"].Text = "Tool: " .. (tool and tool.Name or "None")
+                    tiLabels["Team"].Text = "Team: " .. tostring(target.Team and target.Team.Name or "N/A")
+                else
+                    targetFrame.Visible = false
+                end
+            else
+                targetFrame.Visible = false
+            end
+            task.wait(0.25)
+        end
+    end)
+
+    -- Breathing UIStroke on TargetInfo (synchronized with ActiveList)
+    task.spawn(function()
+        while targetFrame and targetFrame.Parent do
+            SafeTween(tiStroke, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Color = Config.Theme.Primary, Transparency = 0.2})
+            SafeTween(tiGlow, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {BackgroundTransparency = 0.85})
+            task.wait(2)
+            if not targetFrame or not targetFrame.Parent then break end
+            SafeTween(tiStroke, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Color = Config.Theme.PrimaryDark, Transparency = 0.5})
+            SafeTween(tiGlow, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {BackgroundTransparency = 0.5})
             task.wait(2)
         end
     end)
