@@ -1977,12 +1977,14 @@ local function BuildMainUI()
     -- ══════ TOAST SYSTEM (Fixed v1.0.5 — Glassmorphism, no huge square) ══════
     local toastContainer = Instance.new("Frame")
     toastContainer.Name = "ToastContainer"
-    toastContainer.Size = UDim2.new(0, 240, 0, 0)
+    toastContainer.Size = UDim2.new(0, 0, 0, 0)
     toastContainer.Position = UDim2.new(1, -255, 1, -15)
     toastContainer.AnchorPoint = Vector2.new(0, 1)
-    toastContainer.AutomaticSize = Enum.AutomaticSize.Y
+    toastContainer.AutomaticSize = Enum.AutomaticSize.XY
     toastContainer.BackgroundTransparency = 1
     toastContainer.ClipsDescendants = false
+    toastContainer.Active = false
+    toastContainer.Selectable = false
     toastContainer.ZIndex = 100
     toastContainer.Parent = gui
     local toastLayout = Instance.new("UIListLayout")
@@ -1997,10 +1999,10 @@ local function BuildMainUI()
         PlayClickSound()
         toastOrder = toastOrder + 1
 
-        -- Outer wrapper (AutomaticSize wraps content tightly)
+        -- Outer wrapper (compact, passthrough when invisible)
         local toast = Instance.new("Frame")
         toast.Name = "Toast_" .. toastOrder
-        toast.Size = UDim2.new(1, 0, 0, 0)
+        toast.Size = UDim2.new(0, 220, 0, 0)
         toast.AutomaticSize = Enum.AutomaticSize.Y
         toast.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
         toast.BackgroundTransparency = 1
@@ -2008,6 +2010,8 @@ local function BuildMainUI()
         toast.LayoutOrder = toastOrder
         toast.ZIndex = 101
         toast.ClipsDescendants = true
+        toast.Active = false
+        toast.Selectable = false
         toast.Parent = toastContainer
         Instance.new("UICorner", toast).CornerRadius = UDim.new(0, 8)
 
@@ -2628,14 +2632,15 @@ local function BuildMainUI()
     -- ══════ ACTIVE MODULES HUD (Glassmorphism, Draggable, Top-Right) ══════
     local activeFrame = Instance.new("Frame")
     activeFrame.Name = "ActiveList"
-    activeFrame.Size = UDim2.new(0, 180, 0, 28)
-    activeFrame.Position = UDim2.new(1, -195, 0, 10)
+    activeFrame.Size = UDim2.new(0, 170, 0, 28)
+    activeFrame.Position = UDim2.new(1, -185, 0, 10)
     activeFrame.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
-    activeFrame.BackgroundTransparency = 0.3
+    activeFrame.BackgroundTransparency = 0.35
     activeFrame.BorderSizePixel = 0
     activeFrame.ZIndex = 50
     activeFrame.AutomaticSize = Enum.AutomaticSize.Y
     activeFrame.ClipsDescendants = true
+    activeFrame.Active = true
     activeFrame.Parent = gui
     Instance.new("UICorner", activeFrame).CornerRadius = UDim.new(0, 8)
 
@@ -2783,14 +2788,15 @@ local function BuildMainUI()
     -- ══════ TARGET INFO CARD (🎯 Predador HUD — Draggable, Glassmorphism) ══════
     local targetFrame = Instance.new("Frame")
     targetFrame.Name = "TargetInfo"
-    targetFrame.Size = UDim2.new(0, 200, 0, 0)
-    targetFrame.Position = UDim2.new(1, -195, 0, 220)
+    targetFrame.Size = UDim2.new(0, 170, 0, 0)
+    targetFrame.Position = UDim2.new(1, -185, 0, 200)
     targetFrame.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
-    targetFrame.BackgroundTransparency = 0.3
+    targetFrame.BackgroundTransparency = 0.35
     targetFrame.BorderSizePixel = 0
     targetFrame.Visible = false
     targetFrame.AutomaticSize = Enum.AutomaticSize.Y
     targetFrame.ClipsDescendants = true
+    targetFrame.Active = true
     targetFrame.ZIndex = 50
     targetFrame.Parent = gui
     Instance.new("UICorner", targetFrame).CornerRadius = UDim.new(0, 8)
@@ -2874,22 +2880,22 @@ local function BuildMainUI()
     tiLayout.Parent = tiContent
 
     local tiPad = Instance.new("UIPadding")
-    tiPad.PaddingLeft = UDim.new(0, 8)
-    tiPad.PaddingRight = UDim.new(0, 8)
-    tiPad.PaddingBottom = UDim.new(0, 8)
+    tiPad.PaddingLeft = UDim.new(0, 6)
+    tiPad.PaddingRight = UDim.new(0, 6)
+    tiPad.PaddingBottom = UDim.new(0, 5)
     tiPad.Parent = tiContent
 
-    -- Create info labels for target
+    -- Create info labels for target (compact: 12px lines)
     local tiLabels = {}
     for i, lName in ipairs({"Name", "Health", "Distance", "Tool", "Team"}) do
         local lbl = Instance.new("TextLabel")
         lbl.Name = lName
-        lbl.Size = UDim2.new(1, 0, 0, 14)
+        lbl.Size = UDim2.new(1, 0, 0, 12)
         lbl.BackgroundTransparency = 1
         lbl.Text = lName .. ": --"
         lbl.TextColor3 = (i == 1) and Config.Theme.Accent or Config.Theme.Text
         lbl.Font = (i == 1) and Enum.Font.GothamBold or Enum.Font.Gotham
-        lbl.TextSize = (i == 1) and 12 or 10
+        lbl.TextSize = (i == 1) and 10 or 9
         lbl.TextXAlignment = Enum.TextXAlignment.Left
         lbl.LayoutOrder = i
         lbl.ZIndex = 52
